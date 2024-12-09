@@ -7,15 +7,14 @@ namespace opencmd {
     class NodeRoot : public TreeNode {
 
     public:
-        NodeRoot(std::string name = "root") : TreeNode(name) {}
+        NodeRoot(std::string name = "/", std::string parentName = "") : TreeNode(name, parentName) {}
 
-        void from_bitstream(BitStream& bitstream) override {
+        int bitstream_to_json(BitStream& bitStream, nlohmann::json& outputJson) override {
             for (auto& child : this->getChildren()) {
-                child->from_bitstream(bitstream);
+                child->bitstream_to_json(bitStream, outputJson);
             }
+            return 0; 
         };
-
-        void from_json(const nlohmann::json json) override {};
 
     };
 }

@@ -6,13 +6,46 @@ namespace opencmd {
 
     class NodeArray : public TreeNode {
     private:
+        bool is_array_size_fixed;
         size_t repetitions;
+        std::string repetition_reference;
+        bool is_absolute_repetition_reference_path;
         std::vector<std::shared_ptr<TreeComponent>> items;
 
-    public:
-        NodeArray(std::string name, size_t repetitions) : TreeNode(name), repetitions(repetitions) {}
+    private:
+        void prepareItems(const nlohmann::json& outputJson) {
+            items.clear();
+            size_t current_repetitions = repetitions;
+            if(!is_array_size_fixed){
+                current_repetitions = 2;
+                // find the value of the proposed element
+                if(is_absolute_repetition_reference_path){
+                    // ...
+                } else {
+                    // ...
+                }
+            }
+            for(size_t i = 0; i < current_repetitions; i++){
+                for (auto& child : this->getChildren()) {
+                    items.push_back(child->clone());
+                }
+            }
+        };
 
-        NodeArray(const NodeArray& other) : TreeNode(other) { 
+    public:
+        NodeArray(std::string name, size_t repetitions) 
+            : TreeNode(name), repetitions(repetitions), is_array_size_fixed(true),
+              repetition_reference(""), is_absolute_repetition_reference_path(false) {}
+
+        NodeArray(std::string name, std::string repetition_reference, bool is_absolute_repetition_reference_path = true) 
+            : TreeNode(name), repetitions(0), is_array_size_fixed(false),
+              repetition_reference(repetition_reference), is_absolute_repetition_reference_path(is_absolute_repetition_reference_path) {}
+
+        NodeArray(const NodeArray& other) : TreeNode(other), 
+                is_array_size_fixed(other.is_array_size_fixed),
+                repetitions(other.repetitions),
+                repetition_reference(other.repetition_reference),
+                is_absolute_repetition_reference_path(other.is_absolute_repetition_reference_path) { 
             for (const auto& item : other.items) {
                 if (item) {
                     items.push_back(item->clone()); 
@@ -22,7 +55,11 @@ namespace opencmd {
 
         NodeArray& operator=(const NodeArray& other) {
             if (this != &other) {
-                this->setName(other.getName());
+                TreeNode::operator=(other); // Chiama l'operatore di assegnazione della classe base
+                this->is_array_size_fixed = other.is_array_size_fixed;
+                this->repetitions = other.repetitions;
+                this->repetition_reference = other.repetition_reference;
+                this->is_absolute_repetition_reference_path = other.is_absolute_repetition_reference_path;
                 items.clear();
                 for (const auto& item : other.items) {
                     if (item) {
@@ -38,35 +75,33 @@ namespace opencmd {
         }
 
         BitStream to_bitstream() const override {
-            std::cout << "NodeArray Override bitstream start" << std::endl;
-            TreeNode::to_bitstream();
-            std::cout << "NodeArray Override bitstream end" << std::endl;
+            return TreeNode::to_bitstream();
         }
 
-        nlohmann::json to_json() const override {
-            nlohmann::json result;
-            std::string base_flattened_key = std::string("/") + std::string(this->getName()) + std::string("/"); 
+        int bitstream_to_json(BitStream& bitStream, nlohmann::json& outputJson) override {
+            prepareItems(outputJson);
+            std::string array_key_basename = std::string(this->getFullName()) + std::string("/"); 
             int array_index = 0;
             for (auto& item : items) {
-                std::string flattened_key = base_flattened_key + std::to_string(array_index);
+                // Evaluate the item
+                item->bitstream_to_json(bitStream, outputJson);
+                
+                // Prepare the a local json with the correct key (/array/n)
+                // and the value from the evaluated item
                 nlohmann::json j;
-                j[flattened_key] = item->to_json()[flattened_key];
-                result.update(j);
-            }
-            return result;
-        }
+                std::string array_key = array_key_basename + std::to_string(array_index);
+                j[array_key] = outputJson[item->getFullName()];
+                
+                // Remove the current item from the actual evaluated json 
+                outputJson.erase(item->getFullName());
 
-        void from_bitstream(BitStream& bitstream) override {
-            items.clear();
-            for(int i = 0; i < repetitions; i++){
-                for (auto& child : this->getChildren()) {
-                    items.push_back(child->clone());
-                }
+                // Add the local json to the global json
+                outputJson.update(j);
+                array_index++;
             }
-            for (auto& item : items) {
-                item->from_bitstream(bitstream);
-            }
+            return 0;
         };
+
         void from_json(const nlohmann::json json) override {};
 
         int getRepetitions() { return repetitions; }

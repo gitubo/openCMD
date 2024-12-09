@@ -12,7 +12,8 @@ namespace opencmd {
         std::vector<std::shared_ptr<TreeComponent>> children;
 
     public:
-        TreeNode(std::string name = "") : TreeComponent(name) {}
+        TreeNode(std::string name = "", std::string parentName = "/") 
+            : TreeComponent(name, parentName) {}
 
         TreeNode(const TreeNode& other) : TreeComponent(other) { 
             for (const auto& child : other.children) {
@@ -41,7 +42,10 @@ namespace opencmd {
 
         const std::vector<std::shared_ptr<TreeComponent>>& getChildren() const { return children; }
 
-        void addChild(const std::shared_ptr<TreeComponent>& child) { children.push_back(child); }
+        void addChild(const std::shared_ptr<TreeComponent>& child) {
+            child->setParentName(this->getFullName()); 
+            children.push_back(child); 
+        }
 
         BitStream to_bitstream() const override {
             for (const auto& child : children) {
@@ -49,17 +53,8 @@ namespace opencmd {
             }
         }
 
-        nlohmann::json to_json() const override {
-            nlohmann::json result;
-            for (const auto& child : children) {
-                nlohmann::json child_json = child->to_json();
-                result.update(child_json);
-            }
-            return result;
-        }
-
-        void from_bitstream(BitStream&) override {};
         void from_json(const nlohmann::json) override {};
+        int bitstream_to_json(BitStream&, nlohmann::json&) override {};
 
     };
 }
