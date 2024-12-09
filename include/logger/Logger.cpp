@@ -1,4 +1,5 @@
 #include "Logger.hpp"
+
 #include <stdexcept>
 
 namespace opencmd {
