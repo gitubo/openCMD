@@ -16,15 +16,38 @@ namespace opencmd {
         void prepareItems(const nlohmann::json& outputJson) {
             items.clear();
             size_t current_repetitions = repetitions;
+
+            // If the size of the array depends on the value of another field
+            // of the message, find it and align the repetitions attribute 
             if(!is_array_size_fixed){
-                current_repetitions = 2;
-                // find the value of the proposed element
-                if(is_absolute_repetition_reference_path){
-                    // ...
-                } else {
-                    // ...
+
+                std::string repetition_reference_key = repetition_reference;
+                
+                // Evaluate the reference in case of not absolute value
+                if(!is_absolute_repetition_reference_path){
+                    repetition_reference_key = this->getFullName() + repetition_reference;
                 }
+
+                // Check if the reference is present
+                if (!outputJson.contains(repetition_reference_key)) {
+                    Logger::getInstance().log("Missing repetition reference " + repetition_reference_key + " in the evaluated json", Logger::Level::ERROR);
+                    return;
+                } 
+
+                // Getthe value of the reference
+                auto value = outputJson[repetition_reference_key];
+                Logger::getInstance().log("Repetition reference " + repetition_reference_key + " found with value " + value.dump(), Logger::Level::DEBUG);
+                
+                // Check the value is a valid integer
+                if (!value.is_number_integer()) {
+                    Logger::getInstance().log("Repetition reference value is not an integer", Logger::Level::ERROR);
+                    return;
+                }
+
+                current_repetitions = value.get<int>();
             }
+
+            // Create the array of elements to be used during the convertion
             for(size_t i = 0; i < current_repetitions; i++){
                 for (auto& child : this->getChildren()) {
                     items.push_back(child->clone());
@@ -74,9 +97,7 @@ namespace opencmd {
             return std::make_unique<NodeArray>(*this);
         }
 
-        BitStream to_bitstream() const override {
-            return TreeNode::to_bitstream();
-        }
+        int getRepetitions() { return repetitions; }
 
         int bitstream_to_json(BitStream& bitStream, nlohmann::json& outputJson) override {
             prepareItems(outputJson);
@@ -102,9 +123,10 @@ namespace opencmd {
             return 0;
         };
 
-        void from_json(const nlohmann::json json) override {};
+        int json_to_bitstream(nlohmann::json&, BitStream&) override {
+            return 0;
+        };
 
-        int getRepetitions() { return repetitions; }
 
     };
 }

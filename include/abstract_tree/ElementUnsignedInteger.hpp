@@ -27,10 +27,6 @@ namespace opencmd {
             return std::make_unique<ElementUnsignedInteger>(*this);
         }
 
-        BitStream to_bitstream() const override {
-            
-        }
-
         int bitstream_to_json(BitStream& bitStream, nlohmann::json& outputJson) override {
             size_t numberOfBytes = bitLength + 7 >> 3;
             auto buffer = bitStream.consume(bitLength);
@@ -68,7 +64,9 @@ namespace opencmd {
         };
 
 
-        void from_json(const nlohmann::json json) override {};
+        int json_to_bitstream(nlohmann::json&, BitStream&) override {
+            return 0;
+        };
 
     };
 }

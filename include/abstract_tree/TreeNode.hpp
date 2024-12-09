@@ -40,20 +40,16 @@ namespace opencmd {
             return std::make_unique<TreeNode>(*this);
         }
 
-        const std::vector<std::shared_ptr<TreeComponent>>& getChildren() const { return children; }
+        const std::vector<std::shared_ptr<TreeComponent>>& getChildren() const { 
+            return children; 
+        }
 
         void addChild(const std::shared_ptr<TreeComponent>& child) {
             child->setParentName(this->getFullName()); 
             children.push_back(child); 
         }
 
-        BitStream to_bitstream() const override {
-            for (const auto& child : children) {
-                child->to_bitstream(); 
-            }
-        }
-
-        void from_json(const nlohmann::json) override {};
+        int json_to_bitstream(nlohmann::json&, BitStream&) override {};
         int bitstream_to_json(BitStream&, nlohmann::json&) override {};
 
     };
