@@ -1,89 +1,53 @@
 #pragma once
 
-#include <iostream>
 #include <chrono>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 
 namespace opencmd {
     class Logger {
-    public:
-        enum class Level {
-            DEBUG,
-            INFO,
-            WARNING,
-            ERROR,
-            CRITICAL
-        };
+	 	public:
+			enum class Level {
+	   			DEBUG,
+	   			INFO,
+	   			WARNING,
+	   			ERROR,
+	   			CRITICAL
+	   		};
 
-        enum class Output {
-            STDOUT,
-            FILE
-        };
+   			struct Output {
+     			enum Type {
+     				STDOUT,
+     				FILE
+     			};
+    			Type type;
+    			std::string filename;
+   			};
 
-        static Logger& getInstance() {
-            static Logger instance;
-            return instance;
-        }
+	  		~Logger();
 
-        void setLevel(Level severity_){
-            severity = static_cast<unsigned int>(severity_);
-        }
+			static Logger& getInstance(Output output = {Output::STDOUT, ""});
 
-        void setOutput(Output output_){
-            output = static_cast<unsigned int>(output_);
-        }
-        
-        void log(const std::string& message, Level logLevel) {
-            if(static_cast<unsigned int>(logLevel) < severity){ return; }
-            auto now = std::chrono::system_clock::now();
-            auto now_ms = std::chrono::time_point_cast<std::chrono::microseconds>(now);
-            auto value = now_ms.time_since_epoch().count();
+   			Level getSeverity();
+			void setSeverity(Level severity);
 
-            std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-            auto now_tm = std::localtime(&now_c);
+	  		void log(const std::string& message, Level level);
+	  		void debug(const std::string& message);
+	  		void info(const std::string& message);
+	  		void warning(const std::string& message);
+	  		void error(const std::string& message);
+	  		void critical(const std::string& message);
 
-            std::ostringstream oss;
-            oss << std::put_time(now_tm, "[%Y-%m-%d %H:%M:%S.") << std::setfill('0') << std::setw(6) << (value % 1000000) << "] ";
-
-            switch (logLevel) {
-                case Level::DEBUG:
-                    oss << "[debug] ";
-                    break;
-                case Level::INFO:
-                    oss << "[info] ";
-                    break;
-                case Level::WARNING:
-                    oss << "[warning] ";
-                    break;
-                case Level::ERROR:
-                    oss << "[error] ";
-                    break;
-                case Level::CRITICAL:
-                    oss << "[critical] ";
-                    break;
-                default:
-                    std::cout << "UNKNOWN: ";
-                    break;
-            }
-
-            oss << message << std::endl;
-
-            if(output==static_cast<unsigned int>(Output::FILE)){
-                std::ofstream log_file("logs", std::ios_base::app);
-                log_file << oss.str();
-                log_file.close();
-            } else {
-                std::cout << oss.str();
-            }
-        }
-
-    private:
-        Logger() = default;
-        Logger(const Logger&) = delete;
-        Logger& operator=(const Logger&) = delete;    
-        unsigned int severity = static_cast<unsigned int>(Level::DEBUG);
-        unsigned int output = static_cast<unsigned int>(Output::STDOUT);
+		private:
+	   		explicit Logger(Output output);
+			Logger(const Logger&) = delete;
+	  		Logger& operator=(const Logger&) = delete;
+			Level severity = Level::DEBUG;
+			Output output;
+	  		std::ofstream file;
     };
-
 }
