@@ -14,7 +14,8 @@ namespace opencmd {
     public:
         TreeComponent(std::string name = "") : name(name) {}
         const std::string getName() const { return name; }
-        virtual std::shared_ptr<TreeComponent> clone() const = 0;
+        void setName(std::string name) { this->name = name; }
+        virtual std::unique_ptr<TreeComponent> clone() const = 0;
         virtual ~TreeComponent() = default;
         virtual BitStream to_bitstream() const = 0;
         virtual nlohmann::json to_json() const = 0;

@@ -14,12 +14,29 @@ namespace opencmd {
     public:
         TreeNode(std::string name = "") : TreeComponent(name) {}
 
-        std::shared_ptr<TreeComponent> clone() const override {
-            auto cloned_entity = std::make_shared<TreeNode>(this->getName());
-            for (const auto& child : children) {
-                cloned_entity->addChild(child->clone());
+        TreeNode(const TreeNode& other) : TreeComponent(other) { 
+            for (const auto& child : other.children) {
+                if (child) {
+                    children.push_back(child->clone()); 
+                }
             }
-            return cloned_entity;
+        }
+
+        TreeNode& operator=(const TreeNode& other) {
+            if (this != &other) {
+                this->setName(other.getName());
+                children.clear();
+                for (const auto& child : other.children) {
+                    if (child) {
+                        children.push_back(child->clone());
+                    }
+                }
+            }
+            return *this;
+        }
+
+        std::unique_ptr<TreeComponent> clone () const override{
+            return std::make_unique<TreeNode>(*this);
         }
 
         const std::vector<std::shared_ptr<TreeComponent>>& getChildren() const { return children; }

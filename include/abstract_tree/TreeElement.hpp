@@ -10,9 +10,8 @@ namespace opencmd {
     public:
         TreeElement(std::string name = "") : TreeComponent(name) {}
 
-        std::shared_ptr<TreeComponent> clone() const override {
-            auto cloned_entity = std::make_shared<TreeElement>(this->getName());
-            return cloned_entity;
+        std::unique_ptr<TreeComponent> clone () const override{
+            return std::make_unique<TreeElement>(*this);
         }
 
         BitStream to_bitstream() const override {};

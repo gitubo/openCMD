@@ -23,12 +23,8 @@ namespace opencmd {
         ElementInteger(std::string name, int value, size_t bitLength, EndiannessType endianness = EndiannessType::BIG_ENDIAN) 
             : TreeElement(name), value(value), bitLength(bitLength), endianness(endianness) {}
 
-        std::shared_ptr<TreeComponent> clone() const override {
-            auto cloned_entity = std::dynamic_pointer_cast<ElementInteger>(TreeElement::clone());
-            cloned_entity->value = value;
-            cloned_entity->bitLength = bitLength;
-            cloned_entity->endianness = endianness;
-            return cloned_entity;
+        std::unique_ptr<TreeComponent> clone() const override {
+            return std::make_unique<ElementInteger>(*this);
         }
 
         BitStream to_bitstream() const override {

@@ -6,7 +6,6 @@ int main() {
     using namespace opencmd;
     Logger::getInstance().setLevel(Logger::Level::DEBUG);
 
-
     Logger::getInstance().log("Implementing the tree", Logger::Level::INFO);
 
     // Root node

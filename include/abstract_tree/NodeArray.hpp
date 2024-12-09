@@ -11,14 +11,30 @@ namespace opencmd {
 
     public:
         NodeArray(std::string name, size_t repetitions) : TreeNode(name), repetitions(repetitions) {}
-        
-        std::shared_ptr<TreeComponent> clone() const override {
-            auto cloned_entity = std::dynamic_pointer_cast<NodeArray>(TreeNode::clone());
-            for (const auto& item : items) {
-                cloned_entity->items.push_back(item->clone());
+
+        NodeArray(const NodeArray& other) : TreeNode(other) { 
+            for (const auto& item : other.items) {
+                if (item) {
+                    items.push_back(item->clone()); 
+                }
             }
-            cloned_entity->repetitions = repetitions;
-            return cloned_entity;
+        }
+
+        NodeArray& operator=(const NodeArray& other) {
+            if (this != &other) {
+                this->setName(other.getName());
+                items.clear();
+                for (const auto& item : other.items) {
+                    if (item) {
+                        items.push_back(item->clone());
+                    }
+                }
+            }
+            return *this;
+        }
+
+        std::unique_ptr<TreeComponent> clone () const override{
+            return std::make_unique<NodeArray>(*this);
         }
 
         BitStream to_bitstream() const override {
@@ -44,7 +60,6 @@ namespace opencmd {
             items.clear();
             for(int i = 0; i < repetitions; i++){
                 for (auto& child : this->getChildren()) {
-//                    items.push_back(std::make_shared<ElementInteger>("data",0,8));
                     items.push_back(child->clone());
                 }
             }
