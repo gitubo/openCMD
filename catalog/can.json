@@ -1,0 +1,74 @@
+{
+	"version": "0.1",
+	"metadata": {
+		"name": "can",
+		"description": "CAN (standard)"
+	},
+	"structure": [
+		{
+			"name": "start_of_frame",
+			"bit_length": 1,
+			"type": "unsigned integer"
+		},
+		{
+			"name": "identifier",
+			"bit_length": 11,
+			"type": "unsigned integer"
+		},
+		{
+			"name": "RTR",
+			"bit_length": 1,
+			"type": "unsigned integer"
+		},
+		{
+			"name": "IDE",
+			"bit_length": 1,
+			"type": "unsigned integer"				
+		},
+        {
+            "name": "Reserved",
+            "bit_length": 1,
+            "type": "unsigned integer"
+        },
+        {
+            "name": "DLC",
+            "bit_length": 4,
+            "type": "unsigned integer"
+        },
+        {
+            "name": "data",
+            "type": "array",
+            "attributes":{
+                "type": "unsigned integer",
+                "bit_length": 8,
+                "repetitions": "/DLC"
+            }
+        },
+        {
+            "name": "CRC",
+            "bit_length": 15,
+            "type": "unsigned integer"
+        },
+        {
+            "name": "CRC_delimiter",
+            "bit_length": 1,
+            "type": "unsigned integer"
+        },
+        {
+            "name": "ACK",
+            "bit_length": 1,
+            "type": "unsigned integer"
+        },
+        {
+            "name": "ACK_delimiter",
+            "bit_length": 1,
+            "type": "unsigned integer"
+        },
+        {
+            "name": "EOF",
+            "bit_length": 7,
+            "type": "unsigned integer"
+        }	
+	]
+}
+

@@ -4,7 +4,32 @@
 
 int main() {
     using namespace opencmd;
-    Logger::getInstance().setLevel(Logger::Level::DEBUG);
+    Logger::getInstance().setLevel(Logger::Level::INFO);
+
+    const std::string fileName = "../catalog/can.json";
+    nlohmann::json jsonData;
+    std::ifstream inputFile(fileName);
+    if (!inputFile.is_open()) {
+        std::cerr << "Errore: Impossibile aprire il file " << fileName << std::endl;
+        return 1;
+    }
+    try {
+        inputFile >> jsonData;
+        inputFile.close();
+        std::cout << "File JSON caricato con successo:\n";
+        std::cout << jsonData.dump(4) << std::endl; 
+    } catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "Errore di parsing: " << e.what() << std::endl;
+    }
+
+std::cout << "Ottengo l'istanza di SchemaCatalog...\n";
+auto& catalog = SchemaCatalog::getInstance();
+std::cout << "Istanza ottenuta.\n";
+
+    std::cout << "Parsing...\n";
+    SchemaCatalog::getInstance().parseSchema("can", jsonData);
+    std::cout << "end\n";
+
 
     Logger::getInstance().log("Implementing the tree", Logger::Level::INFO);
 
@@ -17,7 +42,6 @@ int main() {
     auto can_ide = std::make_shared<ElementUnsignedInteger>("IDE",1);
     auto can_reserved = std::make_shared<ElementUnsignedInteger>("Reserved",1);
     auto can_dlc = std::make_shared<ElementUnsignedInteger>("DLC",4);
-//    auto can_data = std::make_shared<NodeArray>("data",2);
     auto can_data = std::make_shared<NodeArray>("data","/DLC");
     auto can_crc = std::make_shared<ElementUnsignedInteger>("CRC",15);
     auto can_crc_delimiter = std::make_shared<ElementUnsignedInteger>("CRC_delimiter",1);
@@ -40,22 +64,6 @@ int main() {
     rootNode->addChild(can_ack_delimiter);
     rootNode->addChild(can_eof);
 
-/*     Logger::getInstance().log("from_bitstream", Logger::Level::INFO);
-    auto start = std::chrono::high_resolution_clock::now();
-    BitStream bs_b64 = BitStream(std::string("AUBAIGhgL/A="));
-    rootNode->from_bitstream(bs_b64);
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    Logger::getInstance().log("from_bitstream evaluation completed in " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);
-
-    Logger::getInstance().log("to_json", Logger::Level::INFO);
-    start = std::chrono::high_resolution_clock::now();
-    auto result = rootNode->to_json();
-    end = std::chrono::high_resolution_clock::now();
-    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    Logger::getInstance().log("to_json evaluation completed in " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);
- */
-
     nlohmann::json result;
     BitStream bs_b64 = BitStream(std::string("AUBAIGhgL/A="));
     Logger::getInstance().log("bitstream_to_json", Logger::Level::INFO);
@@ -65,7 +73,7 @@ int main() {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     Logger::getInstance().log("bitstream_to_json " + std::to_string(retVal) + " evaluation completed in " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);
 
-    Logger::getInstance().log("JSON: " + result.unflatten().dump(), Logger::Level::DEBUG);
+    Logger::getInstance().log("JSON: " + result.unflatten().dump(), Logger::Level::INFO);
 
     return 0;
 }

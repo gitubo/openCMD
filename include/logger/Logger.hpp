@@ -16,11 +16,6 @@ namespace opencmd {
             CRITICAL
         };
 
-        enum class Output {
-            STDOUT,
-            FILE
-        };
-
         static Logger& getInstance() {
             static Logger instance;
             return instance;
@@ -28,10 +23,6 @@ namespace opencmd {
 
         void setLevel(Level severity_){
             severity = static_cast<unsigned int>(severity_);
-        }
-
-        void setOutput(Output output_){
-            output = static_cast<unsigned int>(output_);
         }
         
         void log(const std::string& message, Level logLevel) {
@@ -68,14 +59,7 @@ namespace opencmd {
             }
 
             oss << message << std::endl;
-
-            if(output==static_cast<unsigned int>(Output::FILE)){
-                std::ofstream log_file("logs", std::ios_base::app);
-                log_file << oss.str();
-                log_file.close();
-            } else {
-                std::cout << oss.str();
-            }
+            std::cout << oss.str();
         }
 
     private:
@@ -83,7 +67,6 @@ namespace opencmd {
         Logger(const Logger&) = delete;
         Logger& operator=(const Logger&) = delete;    
         unsigned int severity = static_cast<unsigned int>(Level::DEBUG);
-        unsigned int output = static_cast<unsigned int>(Output::STDOUT);
     };
 
 }

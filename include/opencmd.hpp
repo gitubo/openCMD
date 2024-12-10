@@ -6,5 +6,6 @@
 #include "abstract_tree/NodeArray.hpp"
 
 #include "logger/Logger.hpp"
+#include "catalog/SchemaCatalog.hpp"
 
 #endif 
