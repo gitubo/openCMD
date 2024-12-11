@@ -2,7 +2,7 @@
 
 using namespace opencmd;
 
-Schema* SchemaCatalog::getSchema(const std::string& name) {
+const Schema* SchemaCatalog::getSchema(const std::string& name) const {
     auto it = schemaMap.find(name);
     if (it != schemaMap.end()) {
         return &(it->second);
@@ -15,13 +15,11 @@ Schema* SchemaCatalog::getSchema(const std::string& name) {
 int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& jsonSchema) {
     Logger::getInstance().log("Entering parseSchema", Logger::Level::DEBUG);
     Schema schema;
-    schema.catalogName = name;
+    schema.setCatalogName(name);
     if(jsonSchema.is_object()){
        for (const auto& [key, val] : jsonSchema.items()) {
-            Logger::getInstance().log("  key = " + key, Logger::Level::DEBUG);
-    
             if(key=="structure" && val.type() == nlohmann::json::value_t::array){
-                int result = parseSchemaStructure(val, schema.structure);
+                int result = parseSchemaStructure(val, schema.getStructureForUpdate());
                 if(result <= 0){
                     Logger::getInstance().log("Error in parsing structure", Logger::Level::WARNING);
                     return 4;
@@ -36,9 +34,9 @@ int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& js
                         return 3;
                     }
                 }
-                schema.metadata = metadata;
+                schema.setMetadata(metadata);
             } else if(key=="version" && val.type() == nlohmann::json::value_t::string){
-                schema.version = val.get<std::string>();
+                schema.setVersion(val.get<std::string>());
             } else {
                 Logger::getInstance().log("Unsupported type: " + std::to_string(static_cast<int>(jsonSchema.type())) + " for element named <" + key + "> in file <" + name + ">", Logger::Level::WARNING);
                 return 2;
@@ -53,8 +51,6 @@ int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& js
 }
 
 int SchemaCatalog::parseSchemaStructure(const nlohmann::json& jsonStructure, SchemaElement::SchemaElementArray& msgStructure){
-    Logger::getInstance().log("Entering parseSchemaStructure", Logger::Level::DEBUG);
-    
     if(jsonStructure.type() != nlohmann::json::value_t::array){
         Logger::getInstance().log("Provided structure is not an array: " + std::to_string(static_cast<int>(jsonStructure.type())), Logger::Level::ERROR);
         return -1;
@@ -104,11 +100,6 @@ int SchemaCatalog::parseSchemaElement(const nlohmann::json& jsonElement, SchemaE
         }
         ++insertedCount;
     }
-
-    Logger::getInstance().log(
-        "Exiting parseSchemaElement. Inserted elements: " + std::to_string(insertedCount),
-        Logger::Level::DEBUG
-    );
 
     return insertedCount;
 }

@@ -27,12 +27,10 @@ namespace opencmd {
         }
         std::string getFullName() { return parentName + name;}
 
-        virtual std::unique_ptr<TreeComponent> clone() const = 0;
-
         virtual ~TreeComponent() = default;
-
-        virtual int bitstream_to_json(BitStream&, nlohmann::json&) = 0;
-        virtual int json_to_bitstream(nlohmann::json&, BitStream&) = 0;
+        virtual std::unique_ptr<TreeComponent> clone() const { return nullptr; }
+        virtual int json_to_bitstream(nlohmann::json&, BitStream&) { return 0; };
+        virtual int bitstream_to_json(BitStream&, nlohmann::json&) { return 0; };
     };
 }
 

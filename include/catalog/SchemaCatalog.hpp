@@ -18,7 +18,7 @@ namespace opencmd {
             return instance;
         }
 
-        Schema* getSchema(const std::string&);
+        const Schema* getSchema(const std::string&) const;
         int parseSchema(const std::string&, const nlohmann::json&);
 
         std::string to_string(const SchemaElement::SchemaElementArray&);

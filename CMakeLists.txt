@@ -12,6 +12,7 @@ add_library(nlohmann_json INTERFACE)
 add_library(catalog src/catalog/SchemaCatalog.cpp)
 add_library(logger src/logger/Logger.cpp)
 add_library(bitstream src/bitstream/BitStream.cpp)
+add_library(engine src/engine/Engine.cpp)
 
 add_executable(openCMD src/main.cpp)
 
@@ -21,8 +22,9 @@ target_include_directories(openCMD PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include $
 target_include_directories(nlohmann_json INTERFACE /app/json-3.11.2/include)
 
 target_link_libraries(catalog PRIVATE nlohmann_json)
+target_link_libraries(engine PRIVATE nlohmann_json)
 
-target_link_libraries(openCMD PRIVATE logger bitstream catalog proto_service gRPC::grpc++ nlohmann_json)
+target_link_libraries(openCMD PRIVATE logger engine bitstream catalog proto_service gRPC::grpc++ nlohmann_json)
 
 # add_executable(client test/client.cpp)
 # target_include_directories(client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/proto/cpp)

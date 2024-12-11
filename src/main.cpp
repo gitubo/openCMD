@@ -4,29 +4,32 @@
 
 int main() {
     using namespace opencmd;
-    Logger::getInstance().setLevel(Logger::Level::INFO);
+    Logger::getInstance().setLevel(Logger::Level::DEBUG);
 
     const std::string fileName = "../catalog/can.json";
     nlohmann::json jsonData;
     std::ifstream inputFile(fileName);
     if (!inputFile.is_open()) {
-        std::cerr << "Errore: Impossibile aprire il file " << fileName << std::endl;
+        Logger::getInstance().log("Errore: Impossibile aprire il file " + fileName, Logger::Level::ERROR);
         return 1;
     }
     try {
         inputFile >> jsonData;
         inputFile.close();
-        std::cout << "File JSON caricato con successo:\n";
+        Logger::getInstance().log("File JSON caricato con successo", Logger::Level::INFO);
     } catch (const nlohmann::json::parse_error& e) {
-        std::cerr << "Errore di parsing: " << e.what() << std::endl;
+        Logger::getInstance().log("Catalog file not corrctly parsed: " + std::string(e.what()), Logger::Level::ERROR);
+        return 2;
     }
 
-    std::cout << "Parsing... ";
-    std::cout << SchemaCatalog::getInstance().parseSchema("can", jsonData) << std::endl;
+    if(SchemaCatalog::getInstance().parseSchema("can", jsonData) < 0){
+        Logger::getInstance().log("Error in parsing the schema", Logger::Level::ERROR);
+    }
 
-    std::cout << SchemaCatalog::getInstance().getSchema("can")->to_string() << std::endl;
-    
     Logger::getInstance().log("Implementing the tree", Logger::Level::INFO);
+
+    auto rn = Engine::evaluateSchema(*SchemaCatalog::getInstance().getSchema("can"));
+
 
     // Root node
     auto rootNode = std::make_shared<NodeRoot>();

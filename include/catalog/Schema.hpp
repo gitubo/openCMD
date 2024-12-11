@@ -8,11 +8,21 @@
 
 namespace opencmd {
     class Schema {
-    public:
+    private:
         std::string catalogName;
         std::string version;
         std::map<std::string, std::string> metadata;
         SchemaElement::SchemaElementArray structure;
+    public:
+        const std::string getCatalogName() const { return this->catalogName; }
+        const std::string getVersion() const { return this->version; }
+        const std::map<std::string, std::string> getMetadata() const { return this->metadata; }
+        const SchemaElement::SchemaElementArray& getStructure() const { return this->structure; }
+        SchemaElement::SchemaElementArray& getStructureForUpdate() { return this->structure; }
+        
+        void setCatalogName(const std::string& name){ this->catalogName = name;}
+        void setVersion(const std::string& version){ this->version = version;}
+        void setMetadata(const std::map<std::string, std::string>& metadata){ this->metadata = metadata;}
 
         std::string to_string(size_t indent = 0) const {
             std::ostringstream oss;
