@@ -17,20 +17,15 @@ int main() {
         inputFile >> jsonData;
         inputFile.close();
         std::cout << "File JSON caricato con successo:\n";
-        std::cout << jsonData.dump(4) << std::endl; 
     } catch (const nlohmann::json::parse_error& e) {
         std::cerr << "Errore di parsing: " << e.what() << std::endl;
     }
 
-std::cout << "Ottengo l'istanza di SchemaCatalog...\n";
-auto& catalog = SchemaCatalog::getInstance();
-std::cout << "Istanza ottenuta.\n";
+    std::cout << "Parsing... ";
+    std::cout << SchemaCatalog::getInstance().parseSchema("can", jsonData) << std::endl;
 
-    std::cout << "Parsing...\n";
-    SchemaCatalog::getInstance().parseSchema("can", jsonData);
-    std::cout << "end\n";
-
-
+    std::cout << SchemaCatalog::getInstance().getSchema("can")->to_string() << std::endl;
+    
     Logger::getInstance().log("Implementing the tree", Logger::Level::INFO);
 
     // Root node

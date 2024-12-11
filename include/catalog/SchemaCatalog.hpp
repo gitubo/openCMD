@@ -6,17 +6,9 @@
 #include <nlohmann/json.hpp>
 
 #include "../logger/Logger.hpp"
-#include "SchemaElement.hpp"
+#include "Schema.hpp"
 
 namespace opencmd {
-
-    // Definition of a schema describing the format of a message
-    struct Schema{
-        std::string catalogName;
-        std::string version;
-        std::map<std::string, std::string> metadata;
-        SchemaElement::SchemaElementArray structure;
-    };
 
     class SchemaCatalog {
     public:
@@ -29,6 +21,8 @@ namespace opencmd {
         Schema* getSchema(const std::string&);
         int parseSchema(const std::string&, const nlohmann::json&);
 
+        std::string to_string(const SchemaElement::SchemaElementArray&);
+
     private:
         std::map<std::string, Schema> schemaMap;
 
@@ -37,11 +31,8 @@ namespace opencmd {
         SchemaCatalog(const Logger&) = delete;
         SchemaCatalog& operator=(const SchemaCatalog&) = delete;
 
-        SchemaElement::SchemaElementArray parseSchemaStructure(const nlohmann::json&);
-        SchemaElement::SchemaElementObject parseSchemaElement(const nlohmann::json&);
-
-        std::string printMessageElementList(const SchemaElement::SchemaElementObject&);
-
+        int parseSchemaStructure(const nlohmann::json&, SchemaElement::SchemaElementArray&);
+        int parseSchemaElement(const nlohmann::json&, SchemaElement::SchemaElementObject&);
     };
 
 }

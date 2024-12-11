@@ -36,6 +36,53 @@ namespace opencmd {
 
         SchemaElementVariant get() const { return value; }
 
+        std::string to_string(size_t indent = 0) const {
+            std::ostringstream oss;
+            std::string indentStr(indent, ' '); 
+
+            if (isNull()) {
+                oss << "null";
+            } else if (isBool()) {
+                oss << (std::get<bool>(value) ? "true" : "false");
+            } else if (isDecimal()) {
+                oss << std::get<double>(value);
+            } else if (isInteger()) {
+                oss << std::get<int64_t>(value);
+            } else if (isString()) {
+                oss << "\"" << std::get<std::string>(value) << "\"";
+            } else if (isArray()) {
+                oss << "[\n";
+                const auto& array = std::get<SchemaElementArray>(value);
+                for (auto it = array.begin(); it != array.end(); ++it) {
+                    oss << indentStr << "  " << it->to_string(indent + 2);
+                    if (std::next(it) != array.end()) { 
+                        oss << ",\n";
+                    } else {
+                        oss << "\n";
+                    }
+                }
+                oss << indentStr << "]";
+            } else if (isObject()) {
+                oss << "{\n";
+                const auto& object = std::get<SchemaElementObject>(value);
+
+                for (auto it = object.begin(); it != object.end(); ++it) {
+                    auto key = it->first;
+                    auto elem = it->second;
+                    oss << indentStr << "  \"" << key << "\": " << elem.to_string(indent + 2);
+                    if (std::next(it) != object.end()) { 
+                        oss << ",\n";
+                    } else {
+                        oss << "\n";
+                    }
+                }
+                oss << indentStr << "}";
+            } else {
+                oss << "unknown";
+            }
+            return oss.str();
+        }
+
     };
 
 }
