@@ -8,9 +8,9 @@ namespace opencmd {
 
     public:
         enum class EndiannessType {
-            BIG_ENDIAN = 0,
-            LITTLE_ENDIAN = 1,
-            MIDDLE_ENDIAN = 2
+            BIG_ENDIAN,
+            LITTLE_ENDIAN,
+            MIDDLE_ENDIAN
         };
 
     private:

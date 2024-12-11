@@ -1,5 +1,8 @@
 #include "Logger.hpp"
 
+#include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 
 namespace opencmd {
