@@ -7,20 +7,20 @@ namespace opencmd {
     class ElementUnsignedInteger : public TreeElement {
 
     public:
-        enum class EndiannessType {
-            BIG_ENDIAN,
-            LITTLE_ENDIAN,
-            MIDDLE_ENDIAN
+        enum class Endianness {
+            BIG,
+            LITTLE,
+            MIDDLE
         };
 
     private:
         uint64_t value;
         size_t bitLength;
-        EndiannessType endianness;
+        Endianness endianness;
 
     public:
 
-        ElementUnsignedInteger(std::string name, size_t bitLength, EndiannessType endianness = EndiannessType::BIG_ENDIAN) 
+        ElementUnsignedInteger(std::string name, size_t bitLength, Endianness endianness = Endianness::BIG)
             : TreeElement(name), value(0), bitLength(bitLength), endianness(endianness) {}
 
         std::unique_ptr<TreeComponent> clone() const override {
@@ -32,17 +32,17 @@ namespace opencmd {
             auto buffer = bitStream.consume(bitLength);
             uint64_t result = 0;
             switch (endianness){
-                case EndiannessType::BIG_ENDIAN:
+                case Endianness::BIG:
                     for (size_t i = 0; i < numberOfBytes; ++i) {
                         result |= buffer[i] << ((numberOfBytes - 1 - i) * 8);
                     }
                     break;
-                case EndiannessType::LITTLE_ENDIAN:
+                case Endianness::LITTLE:
                     for (size_t i = 0; i < numberOfBytes; ++i) {
                         result |= buffer[i] << (i * 8);
                     }
                     break;
-                case EndiannessType::MIDDLE_ENDIAN:
+                case Endianness::MIDDLE:
                     Logger::getInstance().log("Unsupported endianness: MIDDLE_ENDIAN not yet implemented", Logger::Level::WARNING);
                     return 100;
                 default:
@@ -51,15 +51,15 @@ namespace opencmd {
             }
 
             // Align to the right if the value is not a multiple of 8
-            if(bitLength % 8){
+            if (bitLength % 8) {
                 value = result >> (8 - (bitLength % 8));
             } else {
                 value = result;
             }
 
             // Prepare the json output
-            std::string key = std::string(this->getFullName());
-            outputJson[key] = value; 
+            std::string key = this->getFullName();
+            outputJson[key] = value;
             return 0;
         };
 
@@ -70,4 +70,3 @@ namespace opencmd {
 
     };
 }
-

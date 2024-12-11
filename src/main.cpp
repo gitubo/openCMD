@@ -19,7 +19,7 @@ int main() {
         inputFile.close();
         logger.log("File JSON caricato con successo", Logger::Level::INFO);
     } catch (const nlohmann::json::parse_error& e) {
-        logger.log("Catalog file not corrctly parsed: " + std::string(e.what()), Logger::Level::ERROR);
+        logger.log("Catalog file not correctly parsed: " + std::string(e.what()), Logger::Level::ERROR);
         return 2;
     }
 
