@@ -3,7 +3,6 @@
 #include "TreeElement.hpp"
 
 namespace opencmd {
-
     class NodeUnsignedInteger : public TreeElement {
 
     public:
@@ -19,11 +18,14 @@ namespace opencmd {
         Endianness endianness;
 
     public:
+		NodeUnsignedInteger() : TreeElement(), value(0), bitLength(0), endianness(Endianness::BIG) {}
 
         NodeUnsignedInteger(std::string name, size_t bitLength, Endianness endianness = Endianness::BIG)
-            : TreeElement(name), value(0), bitLength(bitLength), endianness(endianness) {}
+            : TreeElement(), value(0), bitLength(bitLength), endianness(endianness) {
+                this->setName(name);
+            }
 
-        std::unique_ptr<TreeComponent> clone() const override {
+        std::unique_ptr<TreeElement> clone() const override {
             return std::make_unique<NodeUnsignedInteger>(*this);
         }
 
@@ -43,10 +45,10 @@ namespace opencmd {
                     }
                     break;
                 case Endianness::MIDDLE:
-                    Logger::getInstance().log("Unsupported endianness: MIDDLE_ENDIAN not yet implemented", Logger::Level::WARNING);
+                    Logger::getInstance().warning("Unsupported endianness: MIDDLE_ENDIAN not yet implemented");
                     return 100;
                 default:
-                    Logger::getInstance().log("Unsupported endianness", Logger::Level::WARNING);
+                    Logger::getInstance().warning("Unsupported endianness");
                     return 100;
             }
 
@@ -61,12 +63,8 @@ namespace opencmd {
             std::string key = this->getFullName();
             outputJson[key] = value;
             return 0;
-        };
+        }
 
-
-        int json_to_bitstream(nlohmann::json&, BitStream&) override {
-            return 0;
-        };
-
+        int json_to_bitstream(nlohmann::json&, BitStream&) override { return 0; }
     };
 }
