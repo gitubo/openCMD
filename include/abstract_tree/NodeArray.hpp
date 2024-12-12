@@ -56,7 +56,7 @@ namespace opencmd {
         };
 
     public:
-        NodeArray(std::string name, size_t repetitions) 
+        NodeArray(std::string name="", size_t repetitions=0) 
             : TreeNode(name), repetitions(repetitions), is_array_size_fixed(true),
               repetition_reference(""), is_absolute_repetition_reference_path(false) {}
 

@@ -19,21 +19,13 @@ namespace opencmd {
 
         template <typename T>
         void registerClass(const std::string& className) {
-            creators[className] = [&className]() -> std::unique_ptr<TreeElement> {
-                Logger::getInstance().log("Registering class with classname <" + className + ">", Logger::Level::DEBUG);
+            creators[className] = []() -> std::unique_ptr<TreeElement> {
                 return std::make_unique<T>();
             };
         }
 
         std::unique_ptr<TreeElement> create(const std::string& className) {
-            Logger::getInstance().log("Invoking create for class name <" + className + ">", Logger::Level::DEBUG);
-            if (creators.find(className) != creators.end()) {
-                Logger::getInstance().log("Class found", Logger::Level::DEBUG);
-            } else {
-                Logger::getInstance().log("Class NOT found", Logger::Level::DEBUG);
-            }
-
-
+            Logger::getInstance().log("Instantiating class with class name <" + className + ">", Logger::Level::DEBUG);
             if (creators.find(className) != creators.end()) {
                 return creators[className]();
             }
