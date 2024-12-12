@@ -4,29 +4,30 @@
 
 int main() {
     using namespace opencmd;
-    Logger::getInstance().setLevel(Logger::Level::DEBUG);
+    Logger& logger = Logger::getInstance();
+    logger.setSeverity(Logger::Level::DEBUG);
 
     const std::string fileName = "../catalog/can.json";
     nlohmann::json jsonData;
     std::ifstream inputFile(fileName);
     if (!inputFile.is_open()) {
-        Logger::getInstance().log("Errore: Impossibile aprire il file " + fileName, Logger::Level::ERROR);
+        logger.log("Errore: Impossibile aprire il file " + fileName, Logger::Level::ERROR);
         return 1;
     }
     try {
         inputFile >> jsonData;
         inputFile.close();
-        Logger::getInstance().log("File JSON caricato con successo", Logger::Level::INFO);
+        logger.log("File JSON caricato con successo", Logger::Level::INFO);
     } catch (const nlohmann::json::parse_error& e) {
-        Logger::getInstance().log("Catalog file not corrctly parsed: " + std::string(e.what()), Logger::Level::ERROR);
+        logger.log("Catalog file not correctly parsed: " + std::string(e.what()), Logger::Level::ERROR);
         return 2;
     }
 
     if(SchemaCatalog::getInstance().parseSchema("can", jsonData) < 0){
-        Logger::getInstance().log("Error in parsing the schema", Logger::Level::ERROR);
+        logger.log("Error in parsing the schema", Logger::Level::ERROR);
     }
 
-    Logger::getInstance().log("Implementing the tree", Logger::Level::INFO);
+    logger.log("Implementing the tree", Logger::Level::INFO);
 
     auto rn = Engine::evaluateSchema(*SchemaCatalog::getInstance().getSchema("can"));
     if(!rn){
@@ -68,14 +69,14 @@ int main() {
 
     nlohmann::json result;
     BitStream bs_b64 = BitStream(std::string("AUBAIGhgL/A="));
-    Logger::getInstance().log("bitstream_to_json", Logger::Level::INFO);
+    logger.log("bitstream_to_json", Logger::Level::INFO);
     auto start = std::chrono::high_resolution_clock::now();
     int retVal = rootNode->bitstream_to_json(bs_b64, result);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-    Logger::getInstance().log("bitstream_to_json " + std::to_string(retVal) + " evaluation completed in " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);
+    logger.log("bitstream_to_json " + std::to_string(retVal) + " evaluation completed in " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);
 
-    Logger::getInstance().log("JSON: " + result.unflatten().dump(), Logger::Level::INFO);
+    logger.log("JSON: " + result.unflatten().dump(), Logger::Level::INFO);
 
     return 0;
 }
