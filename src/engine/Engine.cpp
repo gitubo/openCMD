@@ -14,9 +14,10 @@ std::optional<std::shared_ptr<TreeElement>> Engine::evaluateElement(const Schema
                 Logger::getInstance().log("Found element with type: " + value.getString().value(), Logger::Level::DEBUG);
                 auto obj = SchemaCatalog::getInstance().wrap_create(value.getString().value());
                 if(obj){
-                    Logger::getInstance().log("Object created", Logger::Level::DEBUG);
+                    return obj;
                 }
-                return obj;
+                Logger::getInstance().log("Object creation failed", Logger::Level::ERROR);
+                return std::nullopt;
             }
         }
 

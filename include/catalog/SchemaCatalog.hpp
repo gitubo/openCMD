@@ -7,7 +7,8 @@
 
 #include "../logger/Logger.hpp"
 #include "../abstract_tree/TreeFactory.hpp"
-#include "../abstract_tree/ElementUnsignedInteger.hpp"
+#include "../abstract_tree/NodeArray.hpp"
+#include "../abstract_tree/NodeUnsignedInteger.hpp"
 #include "Schema.hpp"
 
 namespace opencmd {
@@ -27,6 +28,7 @@ namespace opencmd {
 
         std::unique_ptr<TreeElement> wrap_create(const std::string& className){
             auto obj = TreeFactory::getInstance().create(className);
+            Logger::getInstance().log("After create", Logger::Level::DEBUG);
             if(obj){
                 Logger::getInstance().log("Object created", Logger::Level::DEBUG);
             }
@@ -38,9 +40,9 @@ namespace opencmd {
 
     private:
         SchemaCatalog() {
-            TreeFactory::getInstance().registerClass<ElementUnsignedInteger>("unsigned integer");
+            TreeFactory::getInstance().registerClass<NodeArray>("array");
+            TreeFactory::getInstance().registerClass<NodeUnsignedInteger>("unsigned integer");
         };
-        //SchemaCatalog(const Logger&) = delete;
         SchemaCatalog& operator=(const SchemaCatalog&) = delete;
 
         int parseSchemaStructure(const nlohmann::json&, SchemaElement::SchemaElementArray&);
