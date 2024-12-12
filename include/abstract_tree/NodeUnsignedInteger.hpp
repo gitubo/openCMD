@@ -4,7 +4,7 @@
 
 namespace opencmd {
 
-    class ElementUnsignedInteger : public TreeElement {
+    class NodeUnsignedInteger : public TreeElement {
 
     public:
         enum class Endianness {
@@ -20,11 +20,11 @@ namespace opencmd {
 
     public:
 
-        ElementUnsignedInteger(std::string name, size_t bitLength, Endianness endianness = Endianness::BIG)
+        NodeUnsignedInteger(std::string name, size_t bitLength, Endianness endianness = Endianness::BIG)
             : TreeElement(name), value(0), bitLength(bitLength), endianness(endianness) {}
 
         std::unique_ptr<TreeComponent> clone() const override {
-            return std::make_unique<ElementUnsignedInteger>(*this);
+            return std::make_unique<NodeUnsignedInteger>(*this);
         }
 
         int bitstream_to_json(BitStream& bitStream, nlohmann::json& outputJson) override {

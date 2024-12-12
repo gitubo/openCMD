@@ -35,20 +35,20 @@ int main() {
     // Root node
     auto rootNode = std::make_shared<NodeRoot>();
 
-    auto can_start_of_frame = std::make_shared<ElementUnsignedInteger>("start_of_frame",1);
-    auto can_identifier = std::make_shared<ElementUnsignedInteger>("identifier",11);
-    auto can_rtr = std::make_shared<ElementUnsignedInteger>("RTR",1);
-    auto can_ide = std::make_shared<ElementUnsignedInteger>("IDE",1);
-    auto can_reserved = std::make_shared<ElementUnsignedInteger>("Reserved",1);
-    auto can_dlc = std::make_shared<ElementUnsignedInteger>("DLC",4);
+    auto can_start_of_frame = std::make_shared<NodeUnsignedInteger>("start_of_frame",1);
+    auto can_identifier = std::make_shared<NodeUnsignedInteger>("identifier",11);
+    auto can_rtr = std::make_shared<NodeUnsignedInteger>("RTR",1);
+    auto can_ide = std::make_shared<NodeUnsignedInteger>("IDE",1);
+    auto can_reserved = std::make_shared<NodeUnsignedInteger>("Reserved",1);
+    auto can_dlc = std::make_shared<NodeUnsignedInteger>("DLC",4);
     auto can_data = std::make_shared<NodeArray>("data","/DLC");
-    auto can_crc = std::make_shared<ElementUnsignedInteger>("CRC",15);
-    auto can_crc_delimiter = std::make_shared<ElementUnsignedInteger>("CRC_delimiter",1);
-    auto can_ack = std::make_shared<ElementUnsignedInteger>("ACK",1);
-    auto can_ack_delimiter = std::make_shared<ElementUnsignedInteger>("ACK_delimiter",1);
-    auto can_eof = std::make_shared<ElementUnsignedInteger>("EOF",7);
+    auto can_crc = std::make_shared<NodeUnsignedInteger>("CRC",15);
+    auto can_crc_delimiter = std::make_shared<NodeUnsignedInteger>("CRC_delimiter",1);
+    auto can_ack = std::make_shared<NodeUnsignedInteger>("ACK",1);
+    auto can_ack_delimiter = std::make_shared<NodeUnsignedInteger>("ACK_delimiter",1);
+    auto can_eof = std::make_shared<NodeUnsignedInteger>("EOF",7);
 
-    can_data->addChild(std::make_shared<ElementUnsignedInteger>("data",8));
+    can_data->addChild(std::make_shared<NodeUnsignedInteger>("data",8));
 
     rootNode->addChild(can_start_of_frame);
     rootNode->addChild(can_identifier);
