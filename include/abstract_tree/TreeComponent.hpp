@@ -33,4 +33,3 @@ namespace opencmd {
         virtual int bitstream_to_json(BitStream&, nlohmann::json&) { return 0; };
     };
 }
-

@@ -10,7 +10,7 @@ namespace opencmd {
         size_t repetitions;
         std::string repetition_reference;
         bool is_absolute_repetition_reference_path;
-        std::vector<std::shared_ptr<TreeComponent>> items;
+        std::vector<std::shared_ptr<TreeElement>> items;
 
     private:
         void prepareItems(const nlohmann::json& outputJson) {
@@ -93,7 +93,7 @@ namespace opencmd {
             return *this;
         }
 
-        std::unique_ptr<TreeComponent> clone () const override{
+        std::unique_ptr<TreeElement> clone () const override{
             return std::make_unique<NodeArray>(*this);
         }
 

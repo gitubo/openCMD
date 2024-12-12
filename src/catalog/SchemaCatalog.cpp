@@ -100,6 +100,8 @@ int SchemaCatalog::parseSchemaElement(const nlohmann::json& jsonElement, SchemaE
         }
         ++insertedCount;
     }
+    
+    TreeFactory::getInstance().registerClass<ElementUnsignedInteger>("unsigned integer");
 
     return insertedCount;
 }

@@ -17,7 +17,6 @@ namespace opencmd {
         size_t capacity;                   
         size_t offset;                     
 
-        // Helper: copia i bit da un offset specifico
         void copyBits(uint8_t*, size_t, const uint8_t*, size_t, size_t) const;
 
     public:

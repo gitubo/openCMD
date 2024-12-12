@@ -8,9 +8,9 @@ namespace opencmd {
 
     public:
         enum class EndiannessType {
-            BIG_ENDIAN = 0,
-            LITTLE_ENDIAN = 1,
-            MIDDLE_ENDIAN = 2
+            BIG_ENDIAN,
+            LITTLE_ENDIAN,
+            MIDDLE_ENDIAN
         };
 
     private:
@@ -20,10 +20,10 @@ namespace opencmd {
 
     public:
 
-        ElementUnsignedInteger(std::string name, size_t bitLength, EndiannessType endianness = EndiannessType::BIG_ENDIAN) 
+        ElementUnsignedInteger(std::string name = "", size_t bitLength=0, EndiannessType endianness = EndiannessType::BIG_ENDIAN) 
             : TreeElement(name), value(0), bitLength(bitLength), endianness(endianness) {}
 
-        std::unique_ptr<TreeComponent> clone() const override {
+        std::unique_ptr<TreeElement> clone() const override {
             return std::make_unique<ElementUnsignedInteger>(*this);
         }
 

@@ -29,6 +29,10 @@ int main() {
     Logger::getInstance().log("Implementing the tree", Logger::Level::INFO);
 
     auto rn = Engine::evaluateSchema(*SchemaCatalog::getInstance().getSchema("can"));
+    if(!rn){
+        Logger::getInstance().log("Error in evaluating schema", Logger::Level::ERROR);
+        return 1;
+    }
 
 
     // Root node
