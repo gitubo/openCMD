@@ -49,6 +49,12 @@ namespace opencmd {
             }
             return std::nullopt;
         }
+        std::optional<SchemaElementArray> getArray() const {
+            if (std::holds_alternative<SchemaElementArray>(value)) {
+                return std::get<SchemaElementArray>(value);
+            }
+            return std::nullopt;
+        }
 
         std::string to_string(size_t indent = 0) const {
             std::ostringstream oss;

@@ -50,9 +50,13 @@
         {
             "name": "data",
             "type": "array",
-            "attributes":{
-                "type": "unsigned integer",
-                "bit_length": 8,
+            "structure": [
+                {
+                    "type": "unsigned integer",
+                    "bit_length": 8
+                }
+            ],
+            "attributes": {
                 "repetitions": "/DLC"
             }
         },

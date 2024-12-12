@@ -11,6 +11,7 @@
 namespace opencmd {
     class Engine {
     private:
+        static std::optional<std::shared_ptr<NodeRoot>> evaluateStructure(const SchemaElement&, const std::string&);
         static std::optional<std::shared_ptr<TreeElement>> evaluateElement(const SchemaElement&);
     public:
         static std::optional<std::shared_ptr<NodeRoot>> evaluateSchema(const Schema&);

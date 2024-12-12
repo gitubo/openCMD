@@ -12,8 +12,7 @@ namespace opencmd {
         std::vector<std::shared_ptr<TreeElement>> children;
 
     public:
-        TreeNode(std::string name = "", std::string parentName = "/") 
-            : TreeElement(name, parentName) {}
+        TreeNode(){}
 
         TreeNode(const TreeNode& other) : TreeElement(other) { 
             for (const auto& child : other.children) {
@@ -35,11 +34,7 @@ namespace opencmd {
             }
             return *this;
         }
-/*
-        std::unique_ptr<TreeElement> clone () const override{
-            return std::make_unique<TreeNode>(*this);
-        }
-*/
+
         const std::vector<std::shared_ptr<TreeElement>>& getChildren() const { 
             return children; 
         }

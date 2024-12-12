@@ -20,8 +20,13 @@ namespace opencmd {
 
     public:
 
-        NodeUnsignedInteger(std::string name = "", size_t bitLength=0, EndiannessType endianness = EndiannessType::BIG_ENDIAN) 
-            : TreeElement(name), value(0), bitLength(bitLength), endianness(endianness) {}
+        NodeUnsignedInteger() 
+            : TreeElement(), value(0), bitLength(0), endianness(EndiannessType::BIG_ENDIAN) {}
+
+        NodeUnsignedInteger(std::string name, size_t bitLength, EndiannessType endianness = EndiannessType::BIG_ENDIAN) 
+            : TreeElement(), value(0), bitLength(bitLength), endianness(endianness) {
+                this->setName(name);
+            }
 
         std::unique_ptr<TreeElement> clone() const override {
             return std::make_unique<NodeUnsignedInteger>(*this);
