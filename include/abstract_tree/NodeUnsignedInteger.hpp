@@ -18,7 +18,7 @@ namespace opencmd {
         Endianness endianness;
 
     public:
-		NodeUnsignedInteger() : TreeElement(), value(0), bitLength(0), endianness(Endianness::BIG) {}
+        NodeUnsignedInteger() : TreeElement(), value(0), bitLength(0), endianness(Endianness::BIG) {}
 
         NodeUnsignedInteger(std::string name, size_t bitLength, Endianness endianness = Endianness::BIG)
             : TreeElement(), value(0), bitLength(bitLength), endianness(endianness) {

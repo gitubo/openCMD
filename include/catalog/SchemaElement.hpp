@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <optional>
 
 
 namespace opencmd {
@@ -35,6 +36,25 @@ namespace opencmd {
         bool isObject() const { return std::holds_alternative<SchemaElementObject>(value); }
 
         SchemaElementVariant get() const { return value; }
+
+        std::optional<std::string> getString() const {
+            if (std::holds_alternative<std::string>(value)) {
+                return std::get<std::string>(value);
+            }
+            return std::nullopt;
+        }
+        std::optional<SchemaElementObject> getObject() const {
+            if (std::holds_alternative<SchemaElementObject>(value)) {
+                return std::get<SchemaElementObject>(value);
+            }
+            return std::nullopt;
+        }
+        std::optional<SchemaElementArray> getArray() const {
+            if (std::holds_alternative<SchemaElementArray>(value)) {
+                return std::get<SchemaElementArray>(value);
+            }
+            return std::nullopt;
+        }
 
         std::string to_string(size_t indent = 0) const {
             std::ostringstream oss;

@@ -2,20 +2,19 @@
 
 #include <vector>
 #include <memory>
-#include "TreeComponent.hpp"
+#include "TreeElement.hpp"
 
 namespace opencmd {
 
-    class TreeNode : public TreeComponent {
+    class TreeNode : public TreeElement {
     
     private:
-        std::vector<std::shared_ptr<TreeComponent>> children;
+        std::vector<std::shared_ptr<TreeElement>> children;
 
     public:
-        TreeNode(std::string name = "", std::string parentName = "/") 
-            : TreeComponent(name, parentName) {}
+        TreeNode(){}
 
-        TreeNode(const TreeNode& other) : TreeComponent(other) { 
+        TreeNode(const TreeNode& other) : TreeElement(other) { 
             for (const auto& child : other.children) {
                 if (child) {
                     children.push_back(child->clone()); 
@@ -36,15 +35,11 @@ namespace opencmd {
             return *this;
         }
 
-        std::unique_ptr<TreeComponent> clone () const override{
-            return std::make_unique<TreeNode>(*this);
-        }
-
-        const std::vector<std::shared_ptr<TreeComponent>>& getChildren() const { 
+        const std::vector<std::shared_ptr<TreeElement>>& getChildren() const { 
             return children; 
         }
 
-        void addChild(const std::shared_ptr<TreeComponent>& child) {
+        void addChild(const std::shared_ptr<TreeElement>& child) {
             child->setParentName(this->getFullName()); 
             children.push_back(child); 
         }

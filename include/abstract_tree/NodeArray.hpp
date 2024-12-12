@@ -10,7 +10,7 @@ namespace opencmd {
         size_t repetitions;
         std::string repetition_reference;
         bool is_absolute_repetition_reference_path;
-        std::vector<std::shared_ptr<TreeComponent>> items;
+        std::vector<std::shared_ptr<TreeElement>> items;
 
     private:
         void prepareItems(const nlohmann::json& outputJson) {
@@ -31,6 +31,7 @@ namespace opencmd {
                 // Check if the reference is present
                 if (!outputJson.contains(repetition_reference_key)) {
                     Logger::getInstance().log("Missing repetition reference " + repetition_reference_key + " in the evaluated json", Logger::Level::ERROR);
+                    Logger::getInstance().log(outputJson.dump(), Logger::Level::ERROR);
                     return;
                 } 
 
@@ -56,13 +57,21 @@ namespace opencmd {
         };
 
     public:
-        NodeArray(std::string name, size_t repetitions) 
-            : TreeNode(name), repetitions(repetitions), is_array_size_fixed(true),
+        NodeArray() 
+            : TreeNode(), repetitions(0), is_array_size_fixed(true),
               repetition_reference(""), is_absolute_repetition_reference_path(false) {}
 
+        NodeArray(std::string name, size_t repetitions) 
+            : TreeNode(), repetitions(repetitions), is_array_size_fixed(true),
+              repetition_reference(""), is_absolute_repetition_reference_path(false) {
+                this->setName(name);
+              }
+
         NodeArray(std::string name, std::string repetition_reference, bool is_absolute_repetition_reference_path = true) 
-            : TreeNode(name), repetitions(0), is_array_size_fixed(false),
-              repetition_reference(repetition_reference), is_absolute_repetition_reference_path(is_absolute_repetition_reference_path) {}
+            : TreeNode(), repetitions(0), is_array_size_fixed(false),
+              repetition_reference(repetition_reference), is_absolute_repetition_reference_path(is_absolute_repetition_reference_path) {
+                this->setName(name);
+              }
 
         NodeArray(const NodeArray& other) : TreeNode(other), 
                 is_array_size_fixed(other.is_array_size_fixed),
@@ -93,7 +102,7 @@ namespace opencmd {
             return *this;
         }
 
-        std::unique_ptr<TreeComponent> clone () const override{
+        std::unique_ptr<TreeElement> clone () const override{
             return std::make_unique<NodeArray>(*this);
         }
 
