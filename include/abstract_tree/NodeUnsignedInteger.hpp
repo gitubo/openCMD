@@ -45,7 +45,7 @@ namespace opencmd {
                     }
                     break;
                 case Endianness::MIDDLE:
-                    Logger::getInstance().warning("Unsupported endianness: MIDDLE_ENDIAN not yet implemented");
+                    Logger::getInstance().warning("Unsupported endianness: MIDDLE not (yet) implemented");
                     return 100;
                 default:
                     Logger::getInstance().warning("Unsupported endianness");
