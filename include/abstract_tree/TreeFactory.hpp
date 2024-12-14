@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "TreeElement.hpp"
+#include "TreeNode.hpp"
 
 namespace opencmd {
 
@@ -18,12 +18,12 @@ namespace opencmd {
 
         template <typename T>
         void registerClass(const std::string& className) {
-            creators[className] = []() -> std::unique_ptr<TreeElement> {
+            creators[className] = []() -> std::unique_ptr<TreeNode> {
                 return std::make_unique<T>();
             };
         }
 
-        std::unique_ptr<TreeElement> create(const std::string& className) {
+        std::unique_ptr<TreeNode> create(const std::string& className) {
             if (creators.find(className) != creators.end()) {
                 return creators[className]();
             }
@@ -33,7 +33,7 @@ namespace opencmd {
         }
 
     private:
-        std::unordered_map<std::string, std::function<std::unique_ptr<TreeElement>()>> creators;
+        std::unordered_map<std::string, std::function<std::unique_ptr<TreeNode>()>> creators;
 
     private:
         TreeFactory() = default;

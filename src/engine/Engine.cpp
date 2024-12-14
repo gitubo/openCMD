@@ -28,7 +28,7 @@ std::optional<std::shared_ptr<NodeRoot>> Engine::evaluateStructure(const std::ve
     return thisNode;
 }
 
-std::optional<std::shared_ptr<TreeElement>> Engine::evaluateElement(const std::map<std::string, SchemaElement>& element){
+std::optional<std::shared_ptr<TreeNode>> Engine::evaluateElement(const std::map<std::string, SchemaElement>& element){
     
     std::string key = "";
 
@@ -75,16 +75,16 @@ std::optional<std::shared_ptr<TreeElement>> Engine::evaluateElement(const std::m
         for(auto it = attributes.begin(); it != attributes.end(); ++it){
             auto element = it->second;
             if(element.isBool()){
-                TreeElementAttribute attribute = TreeElementAttribute(element.getBool().value());
+                TreeNodeAttribute attribute = TreeNodeAttribute(element.getBool().value());
                 obj->addAttribute(it->first, attribute);
             } else if(element.isInteger()){
-                TreeElementAttribute attribute = TreeElementAttribute(element.getInteger().value());
+                TreeNodeAttribute attribute = TreeNodeAttribute(element.getInteger().value());
                 obj->addAttribute(it->first, attribute);
             } else if(element.isDecimal()){
-                TreeElementAttribute attribute = TreeElementAttribute(element.getDecimal().value());
+                TreeNodeAttribute attribute = TreeNodeAttribute(element.getDecimal().value());
                 obj->addAttribute(it->first, attribute);
             } else if(element.isString()){
-                TreeElementAttribute attribute = TreeElementAttribute(element.getString().value());
+                TreeNodeAttribute attribute = TreeNodeAttribute(element.getString().value());
                 obj->addAttribute(it->first, attribute);
             } else {
                 Logger::getInstance().log("Invalid type for attribute <"+it->first+">", Logger::Level::ERROR);

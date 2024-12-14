@@ -6,24 +6,24 @@
 #include <nlohmann/json.hpp>
 #include "../bitstream/BitStream.hpp"
 #include "../logger/Logger.hpp"
-#include "TreeElementAttribute.hpp"
+#include "TreeNodeAttribute.hpp"
 
 
 namespace opencmd {
 
-    class TreeElement {
+    class TreeNode {
 
     private:
         std::string name;
         std::string parentName;
-        std::map<std::string, TreeElementAttribute> attributeMap;
-        std::vector<std::shared_ptr<TreeElement>> children;
+        std::map<std::string, TreeNodeAttribute> attributeMap;
+        std::vector<std::shared_ptr<TreeNode>> children;
 
     public:
 
-        TreeElement() : name(""), parentName("") {}
-        TreeElement(std::string name, std::string parentName) : name(name), parentName(parentName) {}
-        TreeElement(const TreeElement& other) { 
+        TreeNode() : name(""), parentName("") {}
+        TreeNode(std::string name, std::string parentName) : name(name), parentName(parentName) {}
+        TreeNode(const TreeNode& other) { 
             name = other.name;
             parentName = other.parentName;
             for(auto it = other.attributeMap.begin(); it != other.attributeMap.end(); ++it){
@@ -36,7 +36,7 @@ namespace opencmd {
             }
         }
 
-        TreeElement& operator=(const TreeElement& other) {
+        TreeNode& operator=(const TreeNode& other) {
             if (this != &other) {
                 this->setName(other.getName());
                 this->setParentName(other.getParentName());
@@ -54,13 +54,13 @@ namespace opencmd {
             return *this;
         }
 
-        virtual ~TreeElement() = default;
+        virtual ~TreeNode() = default;
         
         const std::string getName() const { return name; }
         const std::string getParentName() const { return parentName; }
         const std::string getFullName() const { return parentName + name;}
-        const std::map<std::string, TreeElementAttribute>& getAttributeMap() const { return attributeMap; }
-        const std::optional<TreeElementAttribute>& getAttribute(const std::string& key) const {
+        const std::map<std::string, TreeNodeAttribute>& getAttributeMap() const { return attributeMap; }
+        const std::optional<TreeNodeAttribute>& getAttribute(const std::string& key) const {
             if(attributeMap.find(key) != attributeMap.end()){
                 return attributeMap.at(key);
             } 
@@ -75,22 +75,22 @@ namespace opencmd {
             this->parentName = parentName; 
         }
 
-        virtual void addAttribute(const std::string& key, const TreeElementAttribute& attribute) {
+        virtual void addAttribute(const std::string& key, const TreeNodeAttribute& attribute) {
             attributeMap[key] = attribute;
         }
         virtual void clearAttributes() { attributeMap.clear(); }
 
-        const std::vector<std::shared_ptr<TreeElement>>& getChildren() const { 
+        const std::vector<std::shared_ptr<TreeNode>>& getChildren() const { 
             return children; 
         }
 
-        void addChild(const std::shared_ptr<TreeElement>& child) {
+        void addChild(const std::shared_ptr<TreeNode>& child) {
             child->setParentName(this->getFullName()); 
             children.push_back(child); 
         }
 
-        virtual std::unique_ptr<TreeElement> clone() const { 
-            return std::make_unique<TreeElement>(*this);
+        virtual std::unique_ptr<TreeNode> clone() const { 
+            return std::make_unique<TreeNode>(*this);
         }
 
         virtual int json_to_bitstream(nlohmann::json&, BitStream&) { return 0; };

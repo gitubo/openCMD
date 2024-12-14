@@ -1,16 +1,16 @@
 #pragma once
 
-#include "TreeElement.hpp"
+#include "TreeNode.hpp"
 
 namespace opencmd {
 
-    class NodeArray : public TreeElement {
+    class NodeArray : public TreeNode {
     private:
         bool is_array_size_fixed = true;
         size_t repetitions = 0;
         std::string repetition_reference = " = ";
         bool is_absolute_reference = true;
-        std::vector<std::shared_ptr<TreeElement>> items;
+        std::vector<std::shared_ptr<TreeNode>> items;
 
     private:
         void prepareItems(const nlohmann::json& outputJson) {
@@ -55,19 +55,19 @@ namespace opencmd {
         };
 
     public:
-        NodeArray() : TreeElement() {}
+        NodeArray() : TreeNode() {}
 
-        NodeArray(std::string name) : TreeElement() {
+        NodeArray(std::string name) : TreeNode() {
             this->setName(name);
         }
 /*
         NodeArray(std::string name, std::string repetition_reference, bool is_absolute_reference = true) 
-            : TreeElement(), repetitions(0), is_array_size_fixed(false),
+            : TreeNode(), repetitions(0), is_array_size_fixed(false),
               repetition_reference(repetition_reference), is_absolute_reference(is_absolute_reference) {
                 this->setName(name);
               }
 */
-        NodeArray(const NodeArray& other) : TreeElement(other), 
+        NodeArray(const NodeArray& other) : TreeNode(other), 
                 is_array_size_fixed(other.is_array_size_fixed),
                 repetitions(other.repetitions),
                 repetition_reference(other.repetition_reference),
@@ -81,7 +81,7 @@ namespace opencmd {
 
         NodeArray& operator=(const NodeArray& other) {
             if (this != &other) {
-                TreeElement::operator=(other); // Chiama l'operatore di assegnazione della classe base
+                TreeNode::operator=(other); // Chiama l'operatore di assegnazione della classe base
                 this->is_array_size_fixed = other.is_array_size_fixed;
                 this->repetitions = other.repetitions;
                 this->repetition_reference = other.repetition_reference;
@@ -96,12 +96,12 @@ namespace opencmd {
             return *this;
         }
 
-        std::unique_ptr<TreeElement> clone () const override{
+        std::unique_ptr<TreeNode> clone () const override{
             return std::make_unique<NodeArray>(*this);
         }
 
-        void addAttribute(const std::string& key, const TreeElementAttribute& attribute) override {
-            TreeElement::addAttribute(key,attribute);
+        void addAttribute(const std::string& key, const TreeNodeAttribute& attribute) override {
+            TreeNode::addAttribute(key,attribute);
             
             if(key=="repetitions"){
                 if(attribute.isInteger()) {

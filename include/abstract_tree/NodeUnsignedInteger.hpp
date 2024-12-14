@@ -1,9 +1,9 @@
 #pragma once
 
-#include "TreeElement.hpp"
+#include "TreeNode.hpp"
 
 namespace opencmd {
-    class NodeUnsignedInteger : public TreeElement {
+    class NodeUnsignedInteger : public TreeNode {
 
     public:
         enum class Endianness {
@@ -18,14 +18,14 @@ namespace opencmd {
         Endianness endianness = Endianness::BIG;
 
     public:
-        NodeUnsignedInteger() : TreeElement() {}
+        NodeUnsignedInteger() : TreeNode() {}
 
-        NodeUnsignedInteger(std::string name) : TreeElement(){
+        NodeUnsignedInteger(std::string name) : TreeNode(){
             this->setName(name);
         }
 
-        void addAttribute(const std::string& key, const TreeElementAttribute& attribute) override {
-            TreeElement::addAttribute(key,attribute);
+        void addAttribute(const std::string& key, const TreeNodeAttribute& attribute) override {
+            TreeNode::addAttribute(key,attribute);
             
             if(key=="bit_length"){
                 if(!attribute.isInteger()){
@@ -55,7 +55,7 @@ namespace opencmd {
             }
         }
 
-        std::unique_ptr<TreeElement> clone() const override {
+        std::unique_ptr<TreeNode> clone() const override {
             return std::make_unique<NodeUnsignedInteger>(*this);
         }
 

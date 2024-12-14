@@ -6,33 +6,33 @@
 
 namespace opencmd {
 
-class TreeElementAttribute {
+class TreeNodeAttribute {
 
     public:
-        using TreeElementAttributeVariant = std::variant<std::nullptr_t, bool, double, int64_t, std::string>;
+        using TreeNodeAttributeVariant = std::variant<std::nullptr_t, bool, double, int64_t, std::string>;
 
     private:
-        TreeElementAttributeVariant value;
+        TreeNodeAttributeVariant value;
 
     public:
-        TreeElementAttribute() : value(nullptr) {}
-        TreeElementAttribute(bool b) : value(b) {}
-        TreeElementAttribute(double d) : value(d) {}
-        TreeElementAttribute(int64_t i) : value(i) {}
-        TreeElementAttribute(const std::string& s) : value(s) {}
-        TreeElementAttribute(const TreeElementAttribute& other) { 
+        TreeNodeAttribute() : value(nullptr) {}
+        TreeNodeAttribute(bool b) : value(b) {}
+        TreeNodeAttribute(double d) : value(d) {}
+        TreeNodeAttribute(int64_t i) : value(i) {}
+        TreeNodeAttribute(const std::string& s) : value(s) {}
+        TreeNodeAttribute(const TreeNodeAttribute& other) { 
             value = other.value;
         }
 
-        TreeElementAttribute& operator=(const TreeElementAttribute& other) {
+        TreeNodeAttribute& operator=(const TreeNodeAttribute& other) {
             if (this != &other) {
                 this->value = other.value;
             }
             return *this;
         }
 
-        std::unique_ptr<TreeElementAttribute> clone() const { 
-            return std::make_unique<TreeElementAttribute>(*this);
+        std::unique_ptr<TreeNodeAttribute> clone() const { 
+            return std::make_unique<TreeNodeAttribute>(*this);
         }
 
         bool isNull() const { return std::holds_alternative<std::nullptr_t>(value); }
@@ -40,7 +40,7 @@ class TreeElementAttribute {
         bool isDecimal() const { return std::holds_alternative<double>(value); }
         bool isInteger() const { return std::holds_alternative<int64_t>(value); }
         bool isString() const { return std::holds_alternative<std::string>(value); }
-        TreeElementAttributeVariant get() const { return value; }
+        TreeNodeAttributeVariant get() const { return value; }
 
         std::optional<std::nullptr_t> getNull() const {
             if (std::holds_alternative<std::nullptr_t>(value)) {
