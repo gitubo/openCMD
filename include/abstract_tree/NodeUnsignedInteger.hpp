@@ -3,26 +3,24 @@
 #include "TreeElement.hpp"
 
 namespace opencmd {
-
     class NodeUnsignedInteger : public TreeElement {
 
     public:
-        enum class EndiannessType {
-            BIG_ENDIAN,
-            LITTLE_ENDIAN,
-            MIDDLE_ENDIAN
+        enum class Endianness {
+            BIG,
+            LITTLE,
+            MIDDLE
         };
 
     private:
         uint64_t value = 0;
-        size_t bitLength=0;
-        EndiannessType endianness=EndiannessType::BIG_ENDIAN;
+        size_t bitLength = 0;
+        Endianness endianness = Endianness::BIG;
 
     public:
-
         NodeUnsignedInteger() : TreeElement() {}
 
-        NodeUnsignedInteger(std::string name) : TreeElement() {
+        NodeUnsignedInteger(std::string name) : TreeElement(){
             this->setName(name);
         }
 
@@ -45,11 +43,11 @@ namespace opencmd {
                 } else {
                     auto endianess_str = attribute.getString().value();
                     if(endianess_str.compare("big")){
-                        endianness=EndiannessType::BIG_ENDIAN;
+                        endianness=Endianness::BIG;
                     } else if(endianess_str.compare("little")){
-                        endianness=EndiannessType::LITTLE_ENDIAN;
+                        endianness=Endianness::LITTLE;
                     } else if(endianess_str.compare("middle")){
-                        endianness=EndiannessType::MIDDLE_ENDIAN;
+                        endianness=Endianness::MIDDLE;
                     } else {
                         Logger::getInstance().log("Attribute <endianness> is not valid ("+endianess_str+")", Logger::Level::ERROR);
                     }
@@ -66,42 +64,37 @@ namespace opencmd {
             auto buffer = bitStream.consume(bitLength);
             uint64_t result = 0;
             switch (endianness){
-                case EndiannessType::BIG_ENDIAN:
+                case Endianness::BIG:
                     for (size_t i = 0; i < numberOfBytes; ++i) {
                         result |= buffer[i] << ((numberOfBytes - 1 - i) * 8);
                     }
                     break;
-                case EndiannessType::LITTLE_ENDIAN:
+                case Endianness::LITTLE:
                     for (size_t i = 0; i < numberOfBytes; ++i) {
                         result |= buffer[i] << (i * 8);
                     }
                     break;
-                case EndiannessType::MIDDLE_ENDIAN:
-                    Logger::getInstance().log("Unsupported endianness: MIDDLE_ENDIAN not yet implemented", Logger::Level::WARNING);
+                case Endianness::MIDDLE:
+                    Logger::getInstance().warning("Unsupported endianness: MIDDLE not (yet) implemented");
                     return 100;
                 default:
-                    Logger::getInstance().log("Unsupported endianness", Logger::Level::WARNING);
+                    Logger::getInstance().warning("Unsupported endianness");
                     return 100;
             }
 
             // Align to the right if the value is not a multiple of 8
-            if(bitLength % 8){
+            if (bitLength % 8) {
                 value = result >> (8 - (bitLength % 8));
             } else {
                 value = result;
             }
 
             // Prepare the json output
-            std::string key = std::string(this->getFullName());
-            outputJson[key] = value; 
+            std::string key = this->getFullName();
+            outputJson[key] = value;
             return 0;
-        };
+        }
 
-
-        int json_to_bitstream(nlohmann::json&, BitStream&) override {
-            return 0;
-        };
-
+        int json_to_bitstream(nlohmann::json&, BitStream&) override { return 0; }
     };
 }
-
