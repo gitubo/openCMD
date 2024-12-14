@@ -60,13 +60,7 @@ namespace opencmd {
         NodeArray(std::string name) : TreeNode() {
             this->setName(name);
         }
-/*
-        NodeArray(std::string name, std::string repetition_reference, bool is_absolute_reference = true) 
-            : TreeNode(), repetitions(0), is_array_size_fixed(false),
-              repetition_reference(repetition_reference), is_absolute_reference(is_absolute_reference) {
-                this->setName(name);
-              }
-*/
+
         NodeArray(const NodeArray& other) : TreeNode(other), 
                 is_array_size_fixed(other.is_array_size_fixed),
                 repetitions(other.repetitions),

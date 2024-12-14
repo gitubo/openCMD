@@ -8,6 +8,7 @@
 
 #include "../logger/Logger.hpp"
 #include "../abstract_tree/TreeFactory.hpp"
+#include "../abstract_tree/NodeRoot.hpp"
 #include "../abstract_tree/NodeArray.hpp"
 #include "../abstract_tree/NodeUnsignedInteger.hpp"
 #include "Schema.hpp"
@@ -17,6 +18,7 @@ namespace opencmd {
     class SchemaCatalog {
     private:
         std::map<std::string, Schema> schemaMap;
+        std::map<std::string, std::shared_ptr<NodeRoot>> abstractTreeMap;
 
     public:
 
@@ -27,6 +29,8 @@ namespace opencmd {
 
         const Schema* getSchema(const std::string&) const;
         int parseSchema(const std::string&, const nlohmann::json&);
+
+        const std::shared_ptr<NodeRoot> getAbstractTree(const std::string&) const;
 
         std::string to_string(const SchemaElement::SchemaElementArray&);
 
@@ -39,6 +43,10 @@ namespace opencmd {
 
         int parseSchemaStructure(const nlohmann::json&, SchemaElement::SchemaElementArray&);
         int parseSchemaElement(const nlohmann::json&, SchemaElement::SchemaElementObject&);
+
+        std::optional<std::shared_ptr<TreeNode>> evaluateElement(const std::map<std::string, SchemaElement>&);
+        std::optional<std::shared_ptr<NodeRoot>> evaluateStructure(const std::vector<SchemaElement>&, const std::string&);
+
     };
 
 }

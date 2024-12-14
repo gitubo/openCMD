@@ -35,7 +35,8 @@ int main() {
         return 1;
     }
 
-    auto rn = Engine::evaluateStructure(schema->getStructure(), "/");
+//    auto rn = Engine::evaluateStructure(schema->getStructure(), "/");
+    auto rn = SchemaCatalog::getInstance().getAbstractTree(schemaName);
     if(!rn){
         Logger::getInstance().log("Error in evaluating schema", Logger::Level::ERROR);
         return 1;
@@ -45,7 +46,7 @@ int main() {
     BitStream bs_b64 = BitStream(std::string("AUBAIGhgL/A="));
     logger.log("bitstream_to_json", Logger::Level::INFO);
     auto start = std::chrono::high_resolution_clock::now();
-    int retVal = rn.value()->bitstream_to_json(bs_b64, result);
+    int retVal = rn->bitstream_to_json(bs_b64, result);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     logger.log("bitstream_to_json " + std::to_string(retVal) + " evaluation completed in " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);

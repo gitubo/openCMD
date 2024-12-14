@@ -7,6 +7,5 @@
 
 #include "logger/Logger.hpp"
 #include "catalog/SchemaCatalog.hpp"
-#include "engine/Engine.hpp"
 
 #endif 
