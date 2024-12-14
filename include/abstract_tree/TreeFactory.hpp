@@ -2,7 +2,6 @@
 
 #include <iostream>
 
-#include "../logger/Logger.hpp"
 #include "TreeElement.hpp"
 
 namespace opencmd {
@@ -25,7 +24,6 @@ namespace opencmd {
         }
 
         std::unique_ptr<TreeElement> create(const std::string& className) {
-            Logger::getInstance().log("Instantiating class with class name <" + className + ">", Logger::Level::DEBUG);
             if (creators.find(className) != creators.end()) {
                 return creators[className]();
             }

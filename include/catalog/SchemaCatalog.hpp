@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <optional>
 #include <nlohmann/json.hpp>
 
 #include "../logger/Logger.hpp"
@@ -14,6 +15,9 @@
 namespace opencmd {
 
     class SchemaCatalog {
+    private:
+        std::map<std::string, Schema> schemaMap;
+
     public:
 
         static SchemaCatalog& getInstance() {
@@ -25,18 +29,6 @@ namespace opencmd {
         int parseSchema(const std::string&, const nlohmann::json&);
 
         std::string to_string(const SchemaElement::SchemaElementArray&);
-
-        std::unique_ptr<TreeElement> wrap_create(const std::string& className){
-            auto obj = TreeFactory::getInstance().create(className);
-            Logger::getInstance().log("After create", Logger::Level::DEBUG);
-            if(obj){
-                Logger::getInstance().log("Object created", Logger::Level::DEBUG);
-            }
-            return obj;
-        }
-
-    private:
-        std::map<std::string, Schema> schemaMap;
 
     private:
         SchemaCatalog() {

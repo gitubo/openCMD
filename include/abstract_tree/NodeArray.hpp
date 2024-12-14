@@ -1,15 +1,15 @@
 #pragma once
 
-#include "TreeNode.hpp"
+#include "TreeElement.hpp"
 
 namespace opencmd {
 
-    class NodeArray : public TreeNode {
+    class NodeArray : public TreeElement {
     private:
-        bool is_array_size_fixed;
-        size_t repetitions;
-        std::string repetition_reference;
-        bool is_absolute_repetition_reference_path;
+        bool is_array_size_fixed = true;
+        size_t repetitions = 0;
+        std::string repetition_reference = " = ";
+        bool is_absolute_reference = true;
         std::vector<std::shared_ptr<TreeElement>> items;
 
     private:
@@ -24,7 +24,7 @@ namespace opencmd {
                 std::string repetition_reference_key = repetition_reference;
                 
                 // Evaluate the reference in case of not absolute value
-                if(!is_absolute_repetition_reference_path){
+                if(!is_absolute_reference){
                     repetition_reference_key = this->getFullName() + repetition_reference;
                 }
 
@@ -35,16 +35,14 @@ namespace opencmd {
                     return;
                 } 
 
-                // Getthe value of the reference
+                // Get the value of the reference
                 auto value = outputJson[repetition_reference_key];
-                Logger::getInstance().log("Repetition reference " + repetition_reference_key + " found with value " + value.dump(), Logger::Level::DEBUG);
                 
                 // Check the value is a valid integer
                 if (!value.is_number_integer()) {
                     Logger::getInstance().log("Repetition reference value is not an integer", Logger::Level::ERROR);
                     return;
                 }
-
                 current_repetitions = value.get<int>();
             }
 
@@ -57,27 +55,23 @@ namespace opencmd {
         };
 
     public:
-        NodeArray() 
-            : TreeNode(), repetitions(0), is_array_size_fixed(true),
-              repetition_reference(""), is_absolute_repetition_reference_path(false) {}
+        NodeArray() : TreeElement() {}
 
-        NodeArray(std::string name, size_t repetitions) 
-            : TreeNode(), repetitions(repetitions), is_array_size_fixed(true),
-              repetition_reference(""), is_absolute_repetition_reference_path(false) {
+        NodeArray(std::string name) : TreeElement() {
+            this->setName(name);
+        }
+/*
+        NodeArray(std::string name, std::string repetition_reference, bool is_absolute_reference = true) 
+            : TreeElement(), repetitions(0), is_array_size_fixed(false),
+              repetition_reference(repetition_reference), is_absolute_reference(is_absolute_reference) {
                 this->setName(name);
               }
-
-        NodeArray(std::string name, std::string repetition_reference, bool is_absolute_repetition_reference_path = true) 
-            : TreeNode(), repetitions(0), is_array_size_fixed(false),
-              repetition_reference(repetition_reference), is_absolute_repetition_reference_path(is_absolute_repetition_reference_path) {
-                this->setName(name);
-              }
-
-        NodeArray(const NodeArray& other) : TreeNode(other), 
+*/
+        NodeArray(const NodeArray& other) : TreeElement(other), 
                 is_array_size_fixed(other.is_array_size_fixed),
                 repetitions(other.repetitions),
                 repetition_reference(other.repetition_reference),
-                is_absolute_repetition_reference_path(other.is_absolute_repetition_reference_path) { 
+                is_absolute_reference(other.is_absolute_reference) { 
             for (const auto& item : other.items) {
                 if (item) {
                     items.push_back(item->clone()); 
@@ -87,11 +81,11 @@ namespace opencmd {
 
         NodeArray& operator=(const NodeArray& other) {
             if (this != &other) {
-                TreeNode::operator=(other); // Chiama l'operatore di assegnazione della classe base
+                TreeElement::operator=(other); // Chiama l'operatore di assegnazione della classe base
                 this->is_array_size_fixed = other.is_array_size_fixed;
                 this->repetitions = other.repetitions;
                 this->repetition_reference = other.repetition_reference;
-                this->is_absolute_repetition_reference_path = other.is_absolute_repetition_reference_path;
+                this->is_absolute_reference = other.is_absolute_reference;
                 items.clear();
                 for (const auto& item : other.items) {
                     if (item) {
@@ -104,6 +98,33 @@ namespace opencmd {
 
         std::unique_ptr<TreeElement> clone () const override{
             return std::make_unique<NodeArray>(*this);
+        }
+
+        void addAttribute(const std::string& key, const TreeElementAttribute& attribute) override {
+            TreeElement::addAttribute(key,attribute);
+            
+            if(key=="repetitions"){
+                if(attribute.isInteger()) {
+                    Logger::getInstance().log("Attribute <repetitions> is an integer", Logger::Level::DEBUG);
+                    repetitions = attribute.getInteger().value();
+                    is_array_size_fixed = true;
+                    repetition_reference = " = ";
+                    is_absolute_reference = false;
+                } else if(attribute.isString()){
+                    Logger::getInstance().log("Attribute <repetitions> is a string", Logger::Level::DEBUG);
+                    repetitions = 0;
+                    is_array_size_fixed = false;
+                    repetition_reference = attribute.getString().value();
+                } else {
+                    Logger::getInstance().log("Attribute <repetitions> is not a string or an integer", Logger::Level::ERROR);
+                }
+            } else if(key=="is_absolute_reference"){
+                if(!attribute.isBool()){
+                    Logger::getInstance().log("Attribute <is_absolute_path> is not a boolean", Logger::Level::ERROR);
+                } else {
+                    is_absolute_reference = attribute.getBool().value();
+                }
+            }
         }
 
         int getRepetitions() { return repetitions; }

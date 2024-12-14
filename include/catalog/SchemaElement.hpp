@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <optional>
+#include <typeinfo>
 
 
 namespace opencmd {
@@ -37,6 +38,30 @@ namespace opencmd {
 
         SchemaElementVariant get() const { return value; }
 
+        std::optional<std::nullptr_t> getNull() const {
+            if (std::holds_alternative<std::nullptr_t>(value)) {
+                return std::get<std::nullptr_t>(value);
+            }
+            return std::nullopt;
+        }
+        std::optional<bool> getBool() const {
+            if (std::holds_alternative<bool>(value)) {
+                return std::get<bool>(value);
+            }
+            return std::nullopt;
+        }
+        std::optional<double> getDecimal() const {
+            if (std::holds_alternative<double>(value)) {
+                return std::get<double>(value);
+            }
+            return std::nullopt;
+        }
+        std::optional<int64_t> getInteger() const {
+            if (std::holds_alternative<int64_t>(value)) {
+                return std::get<int64_t>(value);
+            }
+            return std::nullopt;
+        }
         std::optional<std::string> getString() const {
             if (std::holds_alternative<std::string>(value)) {
                 return std::get<std::string>(value);
@@ -56,6 +81,7 @@ namespace opencmd {
             return std::nullopt;
         }
 
+
         std::string to_string(size_t indent = 0) const {
             std::ostringstream oss;
             std::string indentStr(indent, ' '); 
@@ -71,7 +97,7 @@ namespace opencmd {
             } else if (isString()) {
                 oss << "\"" << std::get<std::string>(value) << "\"";
             } else if (isArray()) {
-                oss << "[\n";
+                oss << indentStr << "[\n";
                 const auto& array = std::get<SchemaElementArray>(value);
                 for (auto it = array.begin(); it != array.end(); ++it) {
                     oss << indentStr << "  " << it->to_string(indent + 2);
@@ -83,13 +109,11 @@ namespace opencmd {
                 }
                 oss << indentStr << "]";
             } else if (isObject()) {
-                oss << "{\n";
+                oss << indentStr << "{\n";
                 const auto& object = std::get<SchemaElementObject>(value);
-
                 for (auto it = object.begin(); it != object.end(); ++it) {
-                    auto key = it->first;
                     auto elem = it->second;
-                    oss << indentStr << "  \"" << key << "\": " << elem.to_string(indent + 2);
+                    oss << indentStr << "  \"" << it->first << "\": " << elem.to_string(indent + 2);
                     if (std::next(it) != object.end()) { 
                         oss << ",\n";
                     } else {
@@ -98,11 +122,11 @@ namespace opencmd {
                 }
                 oss << indentStr << "}";
             } else {
-                oss << "unknown";
+                oss << "-type not supported-";
             }
             return oss.str();
         }
 
-    };
+    }; 
 
 }

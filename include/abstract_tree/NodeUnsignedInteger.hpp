@@ -14,19 +14,48 @@ namespace opencmd {
         };
 
     private:
-        uint64_t value;
-        size_t bitLength;
-        EndiannessType endianness;
+        uint64_t value = 0;
+        size_t bitLength=0;
+        EndiannessType endianness=EndiannessType::BIG_ENDIAN;
 
     public:
 
-        NodeUnsignedInteger() 
-            : TreeElement(), value(0), bitLength(0), endianness(EndiannessType::BIG_ENDIAN) {}
+        NodeUnsignedInteger() : TreeElement() {}
 
-        NodeUnsignedInteger(std::string name, size_t bitLength, EndiannessType endianness = EndiannessType::BIG_ENDIAN) 
-            : TreeElement(), value(0), bitLength(bitLength), endianness(endianness) {
-                this->setName(name);
+        NodeUnsignedInteger(std::string name) : TreeElement() {
+            this->setName(name);
+        }
+
+        void addAttribute(const std::string& key, const TreeElementAttribute& attribute) override {
+            TreeElement::addAttribute(key,attribute);
+            
+            if(key=="bit_length"){
+                if(!attribute.isInteger()){
+                    Logger::getInstance().log("Attribute <bit_length> is not an integer", Logger::Level::ERROR);
+                } else {
+                    bitLength = attribute.getInteger().value();
+                    if(bitLength<=0){
+                        Logger::getInstance().log("Attribute <bit_length> is not valid (<=0)", Logger::Level::ERROR);
+                        bitLength = 0;
+                    }
+                }
+            } else if(key=="endianness"){
+                if(!attribute.isString()){
+                    Logger::getInstance().log("Attribute <endianness> is not a string", Logger::Level::ERROR);
+                } else {
+                    auto endianess_str = attribute.getString().value();
+                    if(endianess_str.compare("big")){
+                        endianness=EndiannessType::BIG_ENDIAN;
+                    } else if(endianess_str.compare("little")){
+                        endianness=EndiannessType::LITTLE_ENDIAN;
+                    } else if(endianess_str.compare("middle")){
+                        endianness=EndiannessType::MIDDLE_ENDIAN;
+                    } else {
+                        Logger::getInstance().log("Attribute <endianness> is not valid ("+endianess_str+")", Logger::Level::ERROR);
+                    }
+                }
             }
+        }
 
         std::unique_ptr<TreeElement> clone() const override {
             return std::make_unique<NodeUnsignedInteger>(*this);

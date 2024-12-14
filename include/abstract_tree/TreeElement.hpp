@@ -6,36 +6,61 @@
 #include <nlohmann/json.hpp>
 #include "../bitstream/BitStream.hpp"
 #include "../logger/Logger.hpp"
+#include "TreeElementAttribute.hpp"
 
 
 namespace opencmd {
-
-    using Attribute = std::variant<
-            bool,
-            double,
-            int64_t,
-            std::string
-        >;
 
     class TreeElement {
 
     private:
         std::string name;
         std::string parentName;
-        std::map<std::string, Attribute> attributeMap;
+        std::map<std::string, TreeElementAttribute> attributeMap;
+        std::vector<std::shared_ptr<TreeElement>> children;
 
     public:
 
         TreeElement() : name(""), parentName("") {}
-        TreeElement(std::string name, std::string parentName)
-            : name(name), parentName(parentName) {}
+        TreeElement(std::string name, std::string parentName) : name(name), parentName(parentName) {}
+        TreeElement(const TreeElement& other) { 
+            name = other.name;
+            parentName = other.parentName;
+            for(auto it = other.attributeMap.begin(); it != other.attributeMap.end(); ++it){
+                attributeMap[it->first] = it->second;
+            }
+            for (const auto& child : other.children) {
+                if (child) {
+                    children.push_back(child->clone()); 
+                }
+            }
+        }
+
+        TreeElement& operator=(const TreeElement& other) {
+            if (this != &other) {
+                this->setName(other.getName());
+                this->setParentName(other.getParentName());
+                attributeMap.clear();
+                for(auto it = other.getAttributeMap().begin(); it != other.getAttributeMap().end(); ++it){
+                    attributeMap[it->first] = it->second;
+                }
+                children.clear();
+                for (const auto& child : other.children) {
+                    if (child) {
+                        children.push_back(child->clone());
+                    }
+                }
+            }
+            return *this;
+        }
+
         virtual ~TreeElement() = default;
         
         const std::string getName() const { return name; }
         const std::string getParentName() const { return parentName; }
         const std::string getFullName() const { return parentName + name;}
-        const std::map<std::string, Attribute>& getAttributeMap() const { return attributeMap; }
-        const std::optional<Attribute> getAttribute(const std::string& key) const {
+        const std::map<std::string, TreeElementAttribute>& getAttributeMap() const { return attributeMap; }
+        const std::optional<TreeElementAttribute>& getAttribute(const std::string& key) const {
             if(attributeMap.find(key) != attributeMap.end()){
                 return attributeMap.at(key);
             } 
@@ -49,16 +74,52 @@ namespace opencmd {
             }
             this->parentName = parentName; 
         }
-        void addAttribute(const std::string& key, const Attribute& attribute) {
+
+        virtual void addAttribute(const std::string& key, const TreeElementAttribute& attribute) {
             attributeMap[key] = attribute;
         }
-        void clearAttributes() { attributeMap.clear(); }
+        virtual void clearAttributes() { attributeMap.clear(); }
+
+        const std::vector<std::shared_ptr<TreeElement>>& getChildren() const { 
+            return children; 
+        }
+
+        void addChild(const std::shared_ptr<TreeElement>& child) {
+            child->setParentName(this->getFullName()); 
+            children.push_back(child); 
+        }
 
         virtual std::unique_ptr<TreeElement> clone() const { 
             return std::make_unique<TreeElement>(*this);
         }
+
         virtual int json_to_bitstream(nlohmann::json&, BitStream&) { return 0; };
         virtual int bitstream_to_json(BitStream&, nlohmann::json&) { return 0; };
+
+        virtual std::string to_string(size_t indent = 0) const { 
+            std::ostringstream oss;
+            std::string indentStr(indent, ' ');
+            oss << indentStr << "{\n" << indentStr; 
+            oss << indentStr << "  \"name\": \"" << name << "\",\n";
+            oss << indentStr << "  \"parentName\": \"" << parentName << "\",\n";
+            oss << indentStr << "  \"attributeMap\": {\n";
+            for(auto it = attributeMap.begin(); it != attributeMap.end(); ++it){
+                oss << indentStr << "  \"" << it->first << "\": " << it->second.to_string();
+                if (std::next(it) != attributeMap.end()) { 
+                    oss << ",\n";
+                } else {
+                    oss << "\n";
+                }
+            }
+            oss << indentStr << "  },\n";
+            oss << indentStr << "  \"children\": [\n";
+            for(const auto& child : children){
+                oss << child->to_string(indent + 2);
+            }
+            oss << indentStr << "  ]\n";
+            oss << indentStr << "}\n";
+            return oss.str();
+        }
     };
 }
 

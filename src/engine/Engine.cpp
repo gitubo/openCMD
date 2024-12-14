@@ -3,93 +3,118 @@
 using namespace opencmd;
 
 
-std::optional<std::shared_ptr<NodeRoot>> Engine::evaluateSchema(const Schema& schema){
-    return evaluateStructure(schema.getStructure(), "");;
-    /*
-    std::shared_ptr<NodeRoot> node_root = std::make_shared<NodeRoot>();
-    for(auto element : schema.getStructure()){
-        auto result = evaluateElement(element);
-        if(!result){
-            Logger::getInstance().log("Error in evaluating element", Logger::Level::ERROR);
-            return std::nullopt;
-        }
-        node_root->addChild(result.value());
-    }
-    return node_root;
-    */
-}
+std::optional<std::shared_ptr<NodeRoot>> Engine::evaluateStructure(const std::vector<SchemaElement>& structure, const std::string& name){
 
-std::optional<std::shared_ptr<NodeRoot>> Engine::evaluateStructure(const SchemaElement& structure, const std::string& parentName){
-    // Check if it is a valid array
-    if(!structure.isArray()){
-        return std::nullopt;
-    }
-
-    // Prepare the root 
+    // Prepare the local root node 
     std::shared_ptr<NodeRoot> thisNode = std::make_shared<NodeRoot>();
-    thisNode->setParentName(parentName);
+    thisNode->setName(name);
 
     // Iterate througt the array and analize the elements
-    for(auto element : structure.getArray().value()){
-        auto result = evaluateElement(element);
+    for (auto it = structure.begin(); it != structure.end(); ++it) {
+
+        if(!it->isObject()){
+            Logger::getInstance().log("SchemaEleemnt is not an object as expected", Logger::Level::ERROR);
+            return std::nullopt;
+        }
+        auto result = evaluateElement(*it->getObject());
         if(!result){
             Logger::getInstance().log("Error in evaluating element of the structure", Logger::Level::ERROR);
             return std::nullopt;
         }
+        result.value()->setParentName(name);
+        Logger::getInstance().log("Adding objcet with name <" + result.value()->getName() + "> as child of object with name <"+thisNode->getName()+">", Logger::Level::DEBUG);
         thisNode->addChild(result.value());
     }
     return thisNode;
 }
 
-std::optional<std::shared_ptr<TreeElement>> Engine::evaluateElement(const SchemaElement& element){
-    Logger::getInstance().log("Calling evaluateElement with object: " + element.to_string(), Logger::Level::WARNING);
+std::optional<std::shared_ptr<TreeElement>> Engine::evaluateElement(const std::map<std::string, SchemaElement>& element){
     
-    if(element.isObject()){
-        const auto& object = element.getObject().value();
-        if(object.find("type") == object.end()){
-            Logger::getInstance().log("Impossible to find a value for key 'type'", Logger::Level::ERROR);
+    std::string key = "";
+
+    // Retrieve 'type' of the element
+    key = "type";
+    if(element.find(key) == element.end()){
+        Logger::getInstance().log("Impossible to find a value for key '"+key+"'", Logger::Level::ERROR);
+        return std::nullopt;
+    }
+    if(!element.at(key).isString()){
+        Logger::getInstance().log("Invalid type for key '"+key+"', not a string", Logger::Level::ERROR);
+        return std::nullopt;
+    }
+    auto type = element.at(key).getString().value();
+
+    // Retrieve 'name' of the element
+    key = "name";
+    if(element.find(key) == element.end()){
+        Logger::getInstance().log("Impossible to find a value for key <"+key+">", Logger::Level::ERROR);
+        return std::nullopt;
+    }
+    if(!element.at(key).isString()){
+        Logger::getInstance().log("Invalid type for key <"+key+">, not a string", Logger::Level::ERROR);
+        return std::nullopt;
+    }
+    auto name = element.at(key).getString().value();
+
+    // Instantiate object
+    auto obj = TreeFactory::getInstance().create(type);
+    if(!obj){
+        Logger::getInstance().log("Object creation failed for type: " + type, Logger::Level::ERROR);
+        return std::nullopt;
+    }
+    obj->setName(name);
+
+    // Retrieve 'attributes' of the element
+    key = "attributes";
+    if(element.find(key) != element.end()){
+        if(!element.at(key).isObject()){
+            Logger::getInstance().log("Invalid type for key <"+key+">, not an object", Logger::Level::ERROR);
             return std::nullopt;
         }
-        if(!object.at("type").isString()){
-            Logger::getInstance().log("Invalid type for key 'type', not a string", Logger::Level::ERROR);
-            return std::nullopt;
-        }
-        auto type = object.at("type").getString().value();
-        auto obj = SchemaCatalog::getInstance().wrap_create(type);
-        if(!obj){
-            Logger::getInstance().log("Object creation failed for type: " + type, Logger::Level::ERROR);
-            return std::nullopt;
-        }
-        obj->setName("aaa");
-
-        return obj;
-
-/*
-
-        // Collect the possible attributes of the object
-        std::string type = "";
-        std::string name = "";
-        for (auto it = object.begin(); it != object.end(); ++it) {
-            auto key = it->first;
-            auto value = it->second;
-            if (key == "type" && value.isString()) {
-                type = value.getString().value();
-                Logger::getInstance().log("Found element with type: " + type, Logger::Level::DEBUG);
+        auto attributes = element.at(key).getObject().value();
+        for(auto it = attributes.begin(); it != attributes.end(); ++it){
+            auto element = it->second;
+            if(element.isBool()){
+                TreeElementAttribute attribute = TreeElementAttribute(element.getBool().value());
+                obj->addAttribute(it->first, attribute);
+            } else if(element.isInteger()){
+                TreeElementAttribute attribute = TreeElementAttribute(element.getInteger().value());
+                obj->addAttribute(it->first, attribute);
+            } else if(element.isDecimal()){
+                TreeElementAttribute attribute = TreeElementAttribute(element.getDecimal().value());
+                obj->addAttribute(it->first, attribute);
+            } else if(element.isString()){
+                TreeElementAttribute attribute = TreeElementAttribute(element.getString().value());
+                obj->addAttribute(it->first, attribute);
+            } else {
+                Logger::getInstance().log("Invalid type for attribute <"+it->first+">", Logger::Level::ERROR);
+                return std::nullopt;
             }
         }
+    } else {
+       Logger::getInstance().log("Key <"+key+"> not found for this object", Logger::Level::ERROR); 
+    }
 
-        if(type.empty){
-            Logger::getInstance().log("'type' attribute not found", Logger::Level::ERROR);
-        }
-        auto obj = SchemaCatalog::getInstance().wrap_create(value.getString().value());
-        if(!obj){
-            Logger::getInstance().log("Object creation failed", Logger::Level::ERROR);
+    key = "structure";
+    if(element.find(key) != element.end()){
+        if(!element.at(key).isArray()){
+            Logger::getInstance().log("Invalid type for key <"+key+">, not an array", Logger::Level::ERROR);
             return std::nullopt;
         }
-        return obj;
 
-*/
+        // Evaluate inner structure
+        auto localStructure = element.at(key).getArray().value();
+        auto localRootNode = evaluateStructure(localStructure, obj->getName());
+        // Copy evaluated children
+        if(localRootNode){
+            for(const auto& localChild : localRootNode.value()->getChildren()){
+                auto child = localChild;
+                obj->addChild(child);
+            }
+        }
+    } else {
+        Logger::getInstance().log("Key <"+key+"> not found for this object", Logger::Level::DEBUG); 
     }
-    
-    return std::nullopt;
+
+    return obj;
 }

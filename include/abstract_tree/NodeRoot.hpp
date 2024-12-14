@@ -1,13 +1,13 @@
 #pragma once
 
-#include "TreeNode.hpp"
+#include "TreeElement.hpp"
 
 namespace opencmd {
 
-    class NodeRoot : public TreeNode {
+    class NodeRoot : public TreeElement {
 
     public:
-        NodeRoot() : TreeNode() {
+        NodeRoot() : TreeElement() {
             this->setName("/");
             this->setParentName("");
          }

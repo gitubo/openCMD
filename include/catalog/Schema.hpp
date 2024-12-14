@@ -12,13 +12,14 @@ namespace opencmd {
         std::string catalogName;
         std::string version;
         std::map<std::string, std::string> metadata;
-        SchemaElement::SchemaElementArray structure;
+        std::vector<SchemaElement> structure;
     public:
+        Schema() = default;
         const std::string getCatalogName() const { return this->catalogName; }
         const std::string getVersion() const { return this->version; }
         const std::map<std::string, std::string> getMetadata() const { return this->metadata; }
-        const SchemaElement::SchemaElementArray& getStructure() const { return this->structure; }
-        SchemaElement::SchemaElementArray& getStructureForUpdate() { return this->structure; }
+        const std::vector<SchemaElement>& getStructure() const { return this->structure; }
+        std::vector<SchemaElement>& getStructureForUpdate() { return this->structure; }
         
         void setCatalogName(const std::string& name){ this->catalogName = name;}
         void setVersion(const std::string& version){ this->version = version;}

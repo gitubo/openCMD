@@ -52,8 +52,11 @@
             "type": "array",
             "structure": [
                 {
+                    "name": "data",
                     "type": "unsigned integer",
-                    "bit_length": 8
+                    "attributes":{
+                        "bit_length": 8
+                    }
                 }
             ],
             "attributes": {

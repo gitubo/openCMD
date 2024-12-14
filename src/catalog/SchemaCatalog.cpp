@@ -13,7 +13,6 @@ const Schema* SchemaCatalog::getSchema(const std::string& name) const {
 }
 
 int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& jsonSchema) {
-    Logger::getInstance().log("Entering parseSchema", Logger::Level::DEBUG);
     Schema schema;
     schema.setCatalogName(name);
     if(jsonSchema.is_object()){
@@ -58,7 +57,6 @@ int SchemaCatalog::parseSchemaStructure(const nlohmann::json& jsonStructure, Sch
 
     int totalInserted = 0;
     for (const auto &entry : jsonStructure) {
-        Logger::getInstance().log("Calling parseSchemaElement", Logger::Level::DEBUG);
         SchemaElement::SchemaElementObject msgElement;
         int inserted = parseSchemaElement(entry, msgElement);
         if (inserted > 0) {
@@ -85,23 +83,40 @@ int SchemaCatalog::parseSchemaElement(const nlohmann::json& jsonElement, SchemaE
     int insertedCount = 0;
 
     for (const auto& [key, val] : jsonElement.items()) {
-        if (key == "name" && val.type() == nlohmann::json::value_t::string) {
-            msgElement.emplace("name", val.get<std::string>());
+
+        if (val.is_string()) {
+            msgElement.emplace(key, SchemaElement(val.get<std::string>()));
+        }
+        else if (val.is_number_integer()) {
+            msgElement.emplace(key, SchemaElement(val.get<int64_t>()));
         } 
-        else if (key == "bit_length" && (val.type() == nlohmann::json::value_t::number_integer || val.type() == nlohmann::json::value_t::number_unsigned)) {
-            msgElement.emplace("bit_length", val.get<int64_t>());
+        else if (val.is_boolean()) {
+            msgElement.emplace(key, SchemaElement(val.get<bool>()));
         } 
-        else if (key == "type" && val.type() == nlohmann::json::value_t::string) {
-            msgElement.emplace("type", val.get<std::string>());
+        else if (val.is_number_float()) {
+            msgElement.emplace(key, SchemaElement(val.get<double>()));
         } 
+        else if (val.is_null()) {
+            msgElement.emplace(key, SchemaElement());
+        }
+        else if (val.is_object()) {
+            SchemaElement::SchemaElementObject msgObject;
+            auto parsed = parseSchemaElement(val.get<std::map<std::string, nlohmann::json>>(), msgObject);
+            msgElement.emplace(key, SchemaElement(msgObject));
+            insertedCount += parsed;
+        }
+        else if (val.is_array()) {
+            SchemaElement::SchemaElementArray msgArray;
+            auto parsed = parseSchemaStructure(val.get<std::vector<nlohmann::json>>(), msgArray);
+            msgElement.emplace(key, SchemaElement(msgArray));
+            insertedCount += parsed;
+        }
         else {
-            Logger::getInstance().log("Unsupported key or value is not of the correct type: " + key, Logger::Level::DEBUG);
+            Logger::getInstance().log("Unsupported key or value is not of the correct type: " + key, Logger::Level::WARNING);
             continue;
         }
         ++insertedCount;
     }
-    
-    TreeFactory::getInstance().registerClass<NodeUnsignedInteger>("unsigned integer");
 
     return insertedCount;
 }
