@@ -22,6 +22,14 @@ const std::shared_ptr<NodeRoot> SchemaCatalog::getAbstractTree(const std::string
     return nullptr;
 }
 
+std::shared_ptr<TreeNode> SchemaCatalog::cloneAbstractTree(const std::string& key) const {
+    auto it = abstractTreeMap.find(key);
+    if (it != abstractTreeMap.end() && it->second) {
+        return it->second->clone();
+    }
+    return nullptr; 
+}
+
 int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& jsonSchema) {
     Schema schema;
     schema.setCatalogName(name);
@@ -159,7 +167,6 @@ std::optional<std::shared_ptr<NodeRoot>> SchemaCatalog::evaluateStructure(const 
             return std::nullopt;
         }
         result.value()->setParentName(name);
-        Logger::getInstance().log("Adding object with name <" + result.value()->getName() + "> as child of object with name <"+thisNode->getName()+">", Logger::Level::DEBUG);
         thisNode->addChild(result.value());
     }
     return thisNode;
@@ -228,9 +235,7 @@ std::optional<std::shared_ptr<TreeNode>> SchemaCatalog::evaluateElement(const st
                 return std::nullopt;
             }
         }
-    } else {
-       Logger::getInstance().log("Key <"+key+"> not found for this object", Logger::Level::ERROR); 
-    }
+    } 
 
     key = "structure";
     if(element.find(key) != element.end()){
@@ -249,9 +254,7 @@ std::optional<std::shared_ptr<TreeNode>> SchemaCatalog::evaluateElement(const st
                 obj->addChild(child);
             }
         }
-    } else {
-        Logger::getInstance().log("Key <"+key+"> not found for this object", Logger::Level::DEBUG); 
-    }
+    } 
 
     return obj;
 }

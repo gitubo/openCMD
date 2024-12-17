@@ -35,9 +35,15 @@ namespace opencmd {
 
         void append(const BitStream&);
 
+        int shift(const size_t, const bool);
+
         std::string to_string() const;
+        std::string to_base64() const { 
+            return base64_encode(this->buffer.get(), (this->capacity + 7) >> 3);
+        };
 
         size_t getCapacity() const { return capacity; }
+        void reduceCapacity(const size_t);
         size_t getOffset() const { return offset;}
         
     private:

@@ -31,6 +31,7 @@ namespace opencmd {
         int parseSchema(const std::string&, const nlohmann::json&);
 
         const std::shared_ptr<NodeRoot> getAbstractTree(const std::string&) const;
+        std::shared_ptr<TreeNode> cloneAbstractTree(const std::string& key) const;
 
         std::string to_string(const SchemaElement::SchemaElementArray&);
 

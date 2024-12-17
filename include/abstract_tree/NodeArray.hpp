@@ -45,11 +45,11 @@ namespace opencmd {
                 }
                 current_repetitions = value.get<int>();
             }
-
+            items.reserve(current_repetitions*this->getChildren().size());
             // Create the array of elements to be used during the convertion
             for(size_t i = 0; i < current_repetitions; i++){
                 for (auto& child : this->getChildren()) {
-                    items.push_back(child->clone());
+                    items.emplace_back(child->clone());
                 }
             }
         };
@@ -66,31 +66,33 @@ namespace opencmd {
                 repetitions(other.repetitions),
                 repetition_reference(other.repetition_reference),
                 is_absolute_reference(other.is_absolute_reference) { 
+            items.reserve(other.items.size());
             for (const auto& item : other.items) {
                 if (item) {
-                    items.push_back(item->clone()); 
+                    items.emplace_back(item->clone());
                 }
             }
         }
 
         NodeArray& operator=(const NodeArray& other) {
             if (this != &other) {
-                TreeNode::operator=(other); // Chiama l'operatore di assegnazione della classe base
+                TreeNode::operator=(other); 
                 this->is_array_size_fixed = other.is_array_size_fixed;
                 this->repetitions = other.repetitions;
                 this->repetition_reference = other.repetition_reference;
                 this->is_absolute_reference = other.is_absolute_reference;
                 items.clear();
+                items.reserve(other.items.size());
                 for (const auto& item : other.items) {
                     if (item) {
-                        items.push_back(item->clone());
+                        items.emplace_back(item->clone());
                     }
                 }
             }
             return *this;
         }
 
-        std::unique_ptr<TreeNode> clone () const override{
+        virtual std::shared_ptr<TreeNode> clone() const override { 
             return std::make_unique<NodeArray>(*this);
         }
 
@@ -99,13 +101,11 @@ namespace opencmd {
             
             if(key=="repetitions"){
                 if(attribute.isInteger()) {
-                    Logger::getInstance().log("Attribute <repetitions> is an integer", Logger::Level::DEBUG);
                     repetitions = attribute.getInteger().value();
                     is_array_size_fixed = true;
                     repetition_reference = " = ";
                     is_absolute_reference = false;
                 } else if(attribute.isString()){
-                    Logger::getInstance().log("Attribute <repetitions> is a string", Logger::Level::DEBUG);
                     repetitions = 0;
                     is_array_size_fixed = false;
                     repetition_reference = attribute.getString().value();
@@ -123,7 +123,7 @@ namespace opencmd {
 
         int getRepetitions() { return repetitions; }
 
-        int bitstream_to_json(BitStream& bitStream, nlohmann::json& outputJson) override {
+        int bitstream_to_json(BitStream& bitStream, nlohmann::ordered_json& outputJson) override {
             prepareItems(outputJson);
             std::string array_key_basename = std::string(this->getFullName()) + std::string("/"); 
             int array_index = 0;
@@ -147,7 +147,14 @@ namespace opencmd {
             return 0;
         };
 
-        int json_to_bitstream(nlohmann::json&, BitStream&) override {
+        int json_to_bitstream(const nlohmann::json& inputJson, BitStream& bitStream) override {
+            /*if(!inputJson.is_array()){
+                Logger::getInstance().error("The provided json is not an array");
+                return 100;
+            }
+            for (const auto& item : inputJson) {
+                std::cout << "item dell'array:" << item.to_string() << std::endl;
+            }*/
             return 0;
         };
 
