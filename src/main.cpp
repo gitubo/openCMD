@@ -4,7 +4,7 @@
 int main() {
     using namespace opencmd;
     Logger& logger = Logger::getInstance();
-    logger.setSeverity(Logger::Level::DEBUG);
+    logger.setSeverity(Logger::Level::INFO);
 
     const std::string fileName = "../catalog/can.json";
     nlohmann::json jsonData;
@@ -42,7 +42,7 @@ int main() {
     auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     logger.log("bitstream_to_json returned <" + std::to_string(retVal) + ">, evaluation time " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);
 
-    logger.log("JSON: " + json.dump(), Logger::Level::INFO);
+    logger.log("JSON: " + json.flatten().dump(), Logger::Level::INFO);
 
     BitStream output_bs = BitStream();
     logger.log("json_to_bitstream", Logger::Level::INFO);
@@ -52,7 +52,7 @@ int main() {
         Logger::getInstance().log("Error in evaluating schema", Logger::Level::ERROR);
         return 1;
     }
-    retVal = rnj->json_to_bitstream(json, output_bs);
+    retVal = rnj->json_to_bitstream(json.flatten(), output_bs);
     end = std::chrono::high_resolution_clock::now();
     duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
     logger.log("json_to_bitstream returned <" + std::to_string(retVal) + ">, evaluation time " + std::to_string(duration.count()) + " ns", Logger::Level::INFO);

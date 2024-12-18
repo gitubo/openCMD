@@ -105,11 +105,11 @@ namespace opencmd {
                 Logger::getInstance().error("The provided json is not an object");
                 return 100;
             }
-            if(!inputJson.contains(this->getName()) && inputJson[this->getName()].is_number_integer()){
-                Logger::getInstance().error("Key <"+this->getName()+"> not found in the provided json object or the related value is not an integer");
+            if(!inputJson.contains(this->getFullName()) || !inputJson[this->getFullName()].is_number_integer()){
+                Logger::getInstance().error("Key <"+this->getFullName()+"> not found in the provided json object or the related value is not an integer");
                 return 100;      
             }
-            uint64_t rawValue = inputJson[this->getName()];
+            uint64_t rawValue = inputJson[this->getFullName()];
             uint64_t value = 0;
             switch (endianness){
                 case Endianness::BIG:
@@ -129,24 +129,11 @@ namespace opencmd {
                     Logger::getInstance().warning("Unsupported endianness");
                     return 100;
             }
-            if(rawValue==20){
-                ;
-            }
-            Logger::getInstance().debug("Appending <"+this->getName()+"> with value <"+std::to_string(rawValue)+"> (bits <"+std::to_string(bitLength)+">)");
-            // Create a bitstream of 64 bits from the passed value
-            uint8_t inputBuffer[sizeof(uint64_t)];
-            std::memcpy(inputBuffer, &value, sizeof(uint64_t));
-            BitStream bsInteger(inputBuffer, sizeof(uint64_t)*8);
-            Logger::getInstance().debug("bsInteger pre shift:  "+bsInteger.to_string());
-            // Align it to the left considering the real number of used bits (bitlength)
-            size_t shiftAmount = (sizeof(uint64_t)*8)-bitLength;
-            std::cout << " shifting by " << std::to_string(shiftAmount) << std::endl;
-            bsInteger.shift(shiftAmount, false);
-            Logger::getInstance().debug("bsInteger post shift: "+bsInteger.to_string());
-            bsInteger.reduceCapacity(bitLength);
-            Logger::getInstance().debug("bsInteger post setCap: "+bsInteger.to_string());
-            // Append the result to the main bitstream object
-            Logger::getInstance().debug("Pre <"+bitStream.to_string()+">");
+            Logger::getInstance().debug("Appending <"+this->getFullName()+"> with value <"+std::to_string(rawValue)+"> (bits <"+std::to_string(bitLength)+">)");
+     
+            uint8_t inputBuffer[(bitLength+7)/8];
+            std::memcpy(inputBuffer, &value, (bitLength+7)/8);
+            BitStream bsInteger(inputBuffer, bitLength);
             bitStream.append(bsInteger);
             Logger::getInstance().debug("Post <"+bitStream.to_string()+">");
             return 0;

@@ -4,12 +4,55 @@ using namespace opencmd;
 
 BitStream::BitStream(const uint8_t* inputBuffer, size_t initialCapacityInBits)
     : capacity(initialCapacityInBits), offset(0) {
-    if (!inputBuffer || initialCapacityInBits == 0) {
+
+    /* A generic array of unsigned 8bits int is converted 
+     * into a uint8_t[] valid for BitStream object
+     * Here a couple of examples:
+     * 
+     * The input is an integer (20) defined by 11 valid bits
+     * int 20 => .....000 00010100
+     * (bytes)   [   1  ] [   0  ]
+     * Converted BitStream
+     * buffer => 00000010 100.....
+     *           [   0  ] [   1  ]
+     * 
+     * The input is a string ('hello') defined by 40 valid bits
+     * 'hello' => 01101000 01100101 01101100 01101100 01101111
+     * (bytes)    [   0  ] [   1  ] [   2  ] [   3  ] [   4  ]
+     * Converted BitStream
+     * BitStream  01101000 01100101 01101100 01101100 01101111
+     *            [   0  ] [   1  ] [   2  ] [   3  ] [   4  ]
+     */
+
+    // Check for valid input
+    if (!inputBuffer || capacity == 0) {
         throw std::invalid_argument("BitStream::set - Input data is invalid or empty");
     }
+
     size_t byteCapacity = (capacity + 7) / 8;
     buffer = std::make_unique<uint8_t[]>(byteCapacity);
-    std::memcpy(buffer.get(), inputBuffer, byteCapacity);
+    size_t bitShiftAmount = capacity % 8;
+
+    if(bitShiftAmount == 0){
+        memcpy(buffer.get(), inputBuffer, byteCapacity);
+    } else {
+        // Circular Right Shift to align to the BitStream approach
+        uint8_t* tempBuffer = (uint8_t*) malloc(sizeof(uint8_t)*byteCapacity);
+        if(!tempBuffer){
+            throw std::invalid_argument("BitStream::set - Impossible to allocate internal buffer"); 
+        }
+
+        size_t bitMask = (static_cast<size_t>(1) << bitShiftAmount) - 1;
+        uint8_t carry = inputBuffer[0] & bitMask;
+        for(int byteIndex = byteCapacity-1; byteIndex >= 0; byteIndex--){
+            uint8_t currentByte = (inputBuffer[byteIndex] >> bitShiftAmount) | (carry << 8-bitShiftAmount);
+            carry = inputBuffer[byteIndex] & bitMask;
+            tempBuffer[byteIndex] = currentByte;
+        }
+
+        memcpy(buffer.get(), tempBuffer, byteCapacity);
+        free(tempBuffer);
+    }
 }
 
 BitStream::BitStream(const std::string& base64_str) : offset(0) {
@@ -72,9 +115,8 @@ std::unique_ptr<uint8_t[]> BitStream::read(size_t length) const {
     size_t byteLength = (length + 7) >> 3;
     auto result = std::make_unique<uint8_t[]>(byteLength);
     std::fill(result.get(), result.get() + byteLength, 0);
-
     copyBits(result.get(), 0, buffer.get(), offset, length);
-
+    
     return result; 
 }
 
@@ -188,6 +230,28 @@ int BitStream::shift(const size_t shiftAmount, const bool shiftRight) {
 }
 
 std::string BitStream::to_string() const {
+    return to_string(buffer, capacity);
+}
+
+std::string BitStream::to_string(const std::unique_ptr<uint8_t[]>& stream, size_t lengthInBits) {
+    std::ostringstream oss;
+    int lengthInBytes = (lengthInBits + 7) / 8;
+    int bitsInLastByte = 8-(lengthInBits % 8);
+    int minBit = 0;
+    for(int index=0; index < lengthInBytes; index++){
+        if(index==lengthInBytes-1){
+            minBit = bitsInLastByte;
+        }
+        for (int bit = 7; bit >= minBit; bit--) {
+            oss << ((stream[index] >> bit) & 1);
+        }
+    }
+    return oss.str();
+}
+
+/*  OLD  */
+/*
+std::string BitStream::to_string() const {
     std::ostringstream oss;
     int lengthInBytes = (capacity + 7) / 8;
     int bitsInLastByte = capacity % 8;
@@ -206,3 +270,69 @@ std::string BitStream::to_string() const {
 
 
 
+*/
+
+
+size_t BitStream::base64_decode(const std::string& encoded_string, std::unique_ptr<uint8_t[]>& decoded_data) {
+    size_t input_length = encoded_string.length();
+    if (input_length % 4 != 0) {
+        throw std::invalid_argument("Invalid Base64 string length.");
+    }
+
+    size_t padding = 0;
+    if (input_length > 0 && encoded_string[input_length - 1] == '=') padding++;
+    if (input_length > 1 && encoded_string[input_length - 2] == '=') padding++;
+    size_t output_length = (input_length / 4) * 3 - padding;
+
+    decoded_data = std::make_unique<uint8_t[]>(output_length);
+
+    size_t output_index = 0;
+    uint32_t buffer = 0;
+    int bits_collected = 0;
+
+    for (char c : encoded_string) {
+        if (c == '=') break; // Il padding non contribuisce ai dati decodificati
+        uint8_t value = base64_lookup[static_cast<uint8_t>(c)];
+        if (value == INVALID_CHAR) {
+            throw std::invalid_argument("Invalid character in Base64 string.");
+        }
+        buffer = (buffer << 6) | value; // Aggiunge 6 bit al buffer
+        bits_collected += 6;
+        if (bits_collected >= 8) {
+            bits_collected -= 8;
+            decoded_data[output_index++] = (buffer >> bits_collected) & 0xFF;
+        }
+    }
+    if (output_index != output_length) {
+        throw std::runtime_error("Decoding error: output length mismatch.");
+    }
+    return output_length;
+};
+
+std::string BitStream::base64_encode(const uint8_t* data, size_t input_length) {
+    std::string encoded_string;
+    encoded_string.reserve(((input_length + 2) / 3) * 4); 
+    size_t i = 0;
+    uint32_t buffer = 0;
+
+    while (i < input_length) {
+        buffer = data[i++] << 16; 
+        if (i < input_length) buffer |= data[i++] << 8; 
+        if (i < input_length) buffer |= data[i++];     
+
+        encoded_string.push_back(base64_chars[(buffer >> 18) & 0x3F]);
+        encoded_string.push_back(base64_chars[(buffer >> 12) & 0x3F]);
+        if ((i - 2) < input_length) {
+            encoded_string.push_back(base64_chars[(buffer >> 6) & 0x3F]);
+        } else {
+            encoded_string.push_back('='); // Padding
+        }
+        if ((i - 1) < input_length) {
+            encoded_string.push_back(base64_chars[buffer & 0x3F]);
+        } else {
+            encoded_string.push_back('='); // Padding
+        }
+    }
+
+    return encoded_string;
+};

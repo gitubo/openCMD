@@ -148,13 +148,27 @@ namespace opencmd {
         };
 
         int json_to_bitstream(const nlohmann::json& inputJson, BitStream& bitStream) override {
-            /*if(!inputJson.is_array()){
-                Logger::getInstance().error("The provided json is not an array");
-                return 100;
+            
+            if(!inputJson.contains(this->getFullName()+"/0")){
+                Logger::getInstance().error("Key <"+this->getFullName()+"/0"+"> not found in the provided json object or the related value is not an array");
+                return 100;      
             }
-            for (const auto& item : inputJson) {
-                std::cout << "item dell'array:" << item.to_string() << std::endl;
-            }*/
+            items.clear();
+            for (auto& [key, val] : inputJson.items()){
+                if(key.rfind(this->getFullName(), 0) == 0){
+                    for (auto& child : this->getChildren()) {
+                        items.emplace_back(child->clone());
+                    }
+                }
+            }
+            int index = 0;
+            for (auto& item : items) {
+                item->setName(std::to_string(index));
+                item->setParentName(this->getFullName());
+                item->json_to_bitstream(inputJson, bitStream);
+                index++;
+            }
+            
             return 0;
         };
 
