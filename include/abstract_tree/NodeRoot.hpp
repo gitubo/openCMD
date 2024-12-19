@@ -11,7 +11,7 @@ namespace opencmd {
 
         NodeRoot(const NodeRoot& other) : TreeNode(other) {}
 
-        virtual std::shared_ptr<TreeNode> clone() const override { 
+        virtual std::unique_ptr<TreeNode> clone() const override { 
             return std::make_unique<NodeRoot>(*this); 
         }
 

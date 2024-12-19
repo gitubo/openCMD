@@ -2,32 +2,14 @@
 
 using namespace opencmd;
 
-const Schema* SchemaCatalog::getSchema(const std::string& name) const {
-    auto it = schemaMap.find(name);
+std::shared_ptr<TreeNode> SchemaCatalog::cloneAbstractTree(const std::string& schemaName) const {
+    auto it = schemaMap.find(schemaName);
     if (it != schemaMap.end()) {
-        return &(it->second);
+        return it->second.getAbstractTree()->clone();
     } else {
-        Logger::getInstance().log("Requested schema <" + name + "> does not exist in the loaded catalog", Logger::Level::WARNING);
+        Logger::getInstance().log("Requested schema <" + schemaName + "> does not exist in the loaded catalog", Logger::Level::WARNING);
     }
     return nullptr;
-}
-
-const std::shared_ptr<NodeRoot> SchemaCatalog::getAbstractTree(const std::string& name) const {
-    auto it = abstractTreeMap.find(name);
-    if (it != abstractTreeMap.end()) {
-        return it->second;
-    } else {
-        Logger::getInstance().log("Requested abstract tree <" + name + "> does not exist in the loaded catalog", Logger::Level::WARNING);
-    }
-    return nullptr;
-}
-
-std::shared_ptr<TreeNode> SchemaCatalog::cloneAbstractTree(const std::string& key) const {
-    auto it = abstractTreeMap.find(key);
-    if (it != abstractTreeMap.end() && it->second) {
-        return it->second->clone();
-    }
-    return nullptr; 
 }
 
 int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& jsonSchema) {
@@ -36,11 +18,15 @@ int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& js
     if(jsonSchema.is_object()){
        for (const auto& [key, val] : jsonSchema.items()) {
             if(key=="structure" && val.type() == nlohmann::json::value_t::array){
-                int result = parseSchemaStructure(val, schema.getStructureForUpdate());
-                if(result <= 0){
-                    Logger::getInstance().log("Error in parsing structure", Logger::Level::WARNING);
+                auto rootNode = evalArray(val);
+                if(!rootNode){
+                    Logger::getInstance().log("Error in parsing structure '/'", Logger::Level::ERROR);
                     return 4;
                 }
+                rootNode.value()->setName("/");
+                rootNode.value()->setParentName("");
+                schema.abstractTree = std::dynamic_pointer_cast<NodeRoot>(rootNode.value());
+                std::cout << " TREE: " << schema.abstractTree->to_string() << std::endl;
             } else if(key=="metadata" && val.type() == nlohmann::json::value_t::object){
                 std::map<std::string, std::string> metadata;
                 for(auto& [key, val] : val.items()){
@@ -64,199 +50,135 @@ int SchemaCatalog::parseSchema(const std::string& name, const nlohmann::json& js
         return 1;
     } 
 
-    auto rootNode = evaluateStructure(schema.getStructure(), "/");
-    if(!rootNode){
-        Logger::getInstance().log("Impossible to evaluate abstract tree from schema structure", Logger::Level::ERROR);
-        return 1;
-    }
-
     schemaMap[name] = schema;
-    abstractTreeMap[name] = rootNode.value();
-
     return 0;
 }
 
-int SchemaCatalog::parseSchemaStructure(const nlohmann::json& jsonStructure, SchemaElement::SchemaElementArray& msgStructure){
-    if(jsonStructure.type() != nlohmann::json::value_t::array){
-        Logger::getInstance().log("Provided structure is not an array: " + std::to_string(static_cast<int>(jsonStructure.type())), Logger::Level::ERROR);
-        return -1;
-    }
-
-    int totalInserted = 0;
-    for (const auto &entry : jsonStructure) {
-        SchemaElement::SchemaElementObject msgElement;
-        int inserted = parseSchemaElement(entry, msgElement);
-        if (inserted > 0) {
-            msgStructure.emplace_back(msgElement);
-            totalInserted++;
-        } else if(inserted == 0){
-            Logger::getInstance().log("No element to be parsed.", Logger::Level::WARNING);
-        } else {
-            Logger::getInstance().log("Failed to parse a schema element, skipping.", Logger::Level::ERROR);
-            return -2;
-        }
-    }
-
-    return totalInserted;
-}
-
-int SchemaCatalog::parseSchemaElement(const nlohmann::json& jsonElement, SchemaElement::SchemaElementObject& msgElement){
-
-    if(jsonElement.type() != nlohmann::json::value_t::object){
-        Logger::getInstance().log("Provided message element is not an object: " + std::to_string(static_cast<int>(jsonElement.type())), Logger::Level::ERROR);
-        return -1;
-    }
-
-    int insertedCount = 0;
-
-    for (const auto& [key, val] : jsonElement.items()) {
-
-        if (val.is_string()) {
-            msgElement.emplace(key, SchemaElement(val.get<std::string>()));
-        }
-        else if (val.is_number_integer()) {
-            msgElement.emplace(key, SchemaElement(val.get<int64_t>()));
-        } 
-        else if (val.is_boolean()) {
-            msgElement.emplace(key, SchemaElement(val.get<bool>()));
-        } 
-        else if (val.is_number_float()) {
-            msgElement.emplace(key, SchemaElement(val.get<double>()));
-        } 
-        else if (val.is_null()) {
-            msgElement.emplace(key, SchemaElement());
-        }
-        else if (val.is_object()) {
-            SchemaElement::SchemaElementObject msgObject;
-            auto parsed = parseSchemaElement(val.get<std::map<std::string, nlohmann::json>>(), msgObject);
-            msgElement.emplace(key, SchemaElement(msgObject));
-            insertedCount += parsed;
-        }
-        else if (val.is_array()) {
-            SchemaElement::SchemaElementArray msgArray;
-            auto parsed = parseSchemaStructure(val.get<std::vector<nlohmann::json>>(), msgArray);
-            msgElement.emplace(key, SchemaElement(msgArray));
-            insertedCount += parsed;
-        }
-        else {
-            Logger::getInstance().log("Unsupported key or value is not of the correct type: " + key, Logger::Level::WARNING);
-            continue;
-        }
-        ++insertedCount;
-    }
-
-    return insertedCount;
-}
-
-std::optional<std::shared_ptr<NodeRoot>> SchemaCatalog::evaluateStructure(const std::vector<SchemaElement>& structure, const std::string& name){
-
-    // Prepare the local root node 
+std::optional<std::shared_ptr<TreeNode>> SchemaCatalog::evalArray(const nlohmann::json& jsonArray){
     std::shared_ptr<NodeRoot> thisNode = std::make_shared<NodeRoot>();
-    thisNode->setName(name);
-
-    // Iterate througt the array and analize the elements
-    for (auto it = structure.begin(); it != structure.end(); ++it) {
-
-        if(!it->isObject()){
-            Logger::getInstance().log("SchemaEleemnt is not an object as expected", Logger::Level::ERROR);
+    for (const auto &entry : jsonArray) {
+        if(entry.type() == nlohmann::json::value_t::array){
+            Logger::getInstance().log("Error not expected an array in array", Logger::Level::ERROR);
             return std::nullopt;
+        } else {
+            auto child = evalObject(entry);
+            if(!child){
+                Logger::getInstance().log("Error in parsing structure '/'", Logger::Level::ERROR);
+                return std::nullopt;
+            }
+            thisNode->addChild(child.value());
         }
-        auto result = evaluateElement(*it->getObject());
-        if(!result){
-            Logger::getInstance().log("Error in evaluating element of the structure", Logger::Level::ERROR);
-            return std::nullopt;
-        }
-        result.value()->setParentName(name);
-        thisNode->addChild(result.value());
     }
     return thisNode;
 }
 
-std::optional<std::shared_ptr<TreeNode>> SchemaCatalog::evaluateElement(const std::map<std::string, SchemaElement>& element){
+std::optional<std::shared_ptr<TreeNode>> SchemaCatalog::evalObject(const nlohmann::json& jsonObject){
     
-    std::string key = "";
-
-    // Retrieve 'type' of the element
-    key = "type";
-    if(element.find(key) == element.end()){
-        Logger::getInstance().log("Impossible to find a value for key '"+key+"'", Logger::Level::ERROR);
+    // Type
+    std::string type;
+    if(jsonObject.contains("type") && jsonObject.at("type").is_string()){
+        type = jsonObject.at("type").get<std::string>();
+    } else {
+        Logger::getInstance().log("Impossible to find a value for key 'type'", Logger::Level::ERROR);
         return std::nullopt;
     }
-    if(!element.at(key).isString()){
-        Logger::getInstance().log("Invalid type for key '"+key+"', not a string", Logger::Level::ERROR);
-        return std::nullopt;
-    }
-    auto type = element.at(key).getString().value();
-
-    // Retrieve 'name' of the element
-    key = "name";
-    if(element.find(key) == element.end()){
-        Logger::getInstance().log("Impossible to find a value for key <"+key+">", Logger::Level::ERROR);
-        return std::nullopt;
-    }
-    if(!element.at(key).isString()){
-        Logger::getInstance().log("Invalid type for key <"+key+">, not a string", Logger::Level::ERROR);
-        return std::nullopt;
-    }
-    auto name = element.at(key).getString().value();
 
     // Instantiate object
-    auto obj = TreeFactory::getInstance().create(type);
-    if(!obj){
-        Logger::getInstance().log("Object creation failed for type: " + type, Logger::Level::ERROR);
+    auto thisNode = TreeFactory::getInstance().create(type);
+    if(!thisNode){
+        Logger::getInstance().log("Node creation failed for type: " + type, Logger::Level::ERROR);
         return std::nullopt;
     }
-    obj->setName(name);
+    Logger::getInstance().debug("Node created for type: " + type);
 
-    // Retrieve 'attributes' of the element
-    key = "attributes";
-    if(element.find(key) != element.end()){
-        if(!element.at(key).isObject()){
-            Logger::getInstance().log("Invalid type for key <"+key+">, not an object", Logger::Level::ERROR);
+    // Name
+    if(jsonObject.contains("name") && jsonObject.at("name").is_string()){
+        thisNode->setName(jsonObject.at("name").get<std::string>());
+    } else {
+        Logger::getInstance().log("Impossible to find key 'name' or it is not a string, default empty value provided", Logger::Level::WARNING);
+    }
+
+    // Attributes
+    if(jsonObject.contains("attributes")){
+        if(!jsonObject.at("attributes").is_object()){
+            Logger::getInstance().log("Invalid type for key 'attributes', object expected", Logger::Level::ERROR);
             return std::nullopt;
         }
-        auto attributes = element.at(key).getObject().value();
-        for(auto it = attributes.begin(); it != attributes.end(); ++it){
-            auto element = it->second;
-            if(element.isBool()){
-                TreeNodeAttribute attribute = TreeNodeAttribute(element.getBool().value());
-                obj->addAttribute(it->first, attribute);
-            } else if(element.isInteger()){
-                TreeNodeAttribute attribute = TreeNodeAttribute(element.getInteger().value());
-                obj->addAttribute(it->first, attribute);
-            } else if(element.isDecimal()){
-                TreeNodeAttribute attribute = TreeNodeAttribute(element.getDecimal().value());
-                obj->addAttribute(it->first, attribute);
-            } else if(element.isString()){
-                TreeNodeAttribute attribute = TreeNodeAttribute(element.getString().value());
-                obj->addAttribute(it->first, attribute);
-            } else {
-                Logger::getInstance().log("Invalid type for attribute <"+it->first+">", Logger::Level::ERROR);
+        auto attributes = jsonObject.at("attributes");
+        for (auto& [attributeName, attributeValue] : attributes.items()) {
+            auto attribute = evalAttribute(attributeValue);
+            if(!attribute){
+                Logger::getInstance().error("Invalid attribute with attribute name <"+attributeName+">");
                 return std::nullopt;
             }
+            thisNode->addAttribute(attributeName, *attribute.value());
         }
     } 
 
-    key = "structure";
-    if(element.find(key) != element.end()){
-        if(!element.at(key).isArray()){
-            Logger::getInstance().log("Invalid type for key <"+key+">, not an array", Logger::Level::ERROR);
+    // Structure
+    if(jsonObject.contains("structure")){
+        if(!jsonObject.at("structure").is_array()){
+            Logger::getInstance().error("Invalid type for key 'structure', array expected");
             return std::nullopt;
         }
-
-        // Evaluate inner structure
-        auto localStructure = element.at(key).getArray().value();
-        auto localRootNode = evaluateStructure(localStructure, obj->getName());
-        // Copy evaluated children
-        if(localRootNode){
-            for(const auto& localChild : localRootNode.value()->getChildren()){
-                auto child = localChild;
-                obj->addChild(child);
-            }
+        auto localRootNode = evalArray(jsonObject.at("structure"));
+        if(!localRootNode){
+            Logger::getInstance().log("Error in parsing structure '...'", Logger::Level::ERROR);
+            return std::nullopt;
+        }
+        // Copy evaluated children to the current root node
+        for(const auto& localChild : localRootNode.value()->getChildren()){
+            auto child = localChild;
+            thisNode->addChild(child);
         }
     } 
 
-    return obj;
+    return thisNode;
+}
+
+std::optional<std::shared_ptr<TreeNodeAttribute>> SchemaCatalog::evalAttribute(const nlohmann::json& jsonAttribute){
+    if(jsonAttribute.is_boolean()){
+        std::shared_ptr<TreeNodeAttribute> thisAttribute = std::make_shared<TreeNodeAttribute>(jsonAttribute.get<bool>());
+        return thisAttribute;
+    } else if(jsonAttribute.is_number_integer()){
+        std::shared_ptr<TreeNodeAttribute> thisAttribute = std::make_shared<TreeNodeAttribute>(jsonAttribute.get<int64_t>());
+        return thisAttribute;
+    } else if(jsonAttribute.is_number_float()){
+        std::shared_ptr<TreeNodeAttribute> thisAttribute = std::make_shared<TreeNodeAttribute>(jsonAttribute.get<double>());
+        return thisAttribute;
+    } else if(jsonAttribute.is_string()){
+        std::shared_ptr<TreeNodeAttribute> thisAttribute = std::make_shared<TreeNodeAttribute>(jsonAttribute.get<std::string>());
+        return thisAttribute;
+    } else if(jsonAttribute.is_array()){
+        TreeNodeAttribute::TreeNodeAttributeArray attributeArray;
+        attributeArray.reserve(jsonAttribute.size());
+        for (auto& [attributeName, attributeValue] : jsonAttribute.items()) {
+            auto attribute = evalAttribute(attributeValue);
+            if(!attribute){
+                Logger::getInstance().error("Invalid attribute in array at position <"+attributeName+">");
+                return std::nullopt;
+            }
+            attributeArray.emplace_back(*attribute.value());
+        }
+        std::shared_ptr<TreeNodeAttribute> thisAttribute = std::make_shared<TreeNodeAttribute>(attributeArray);
+        return thisAttribute;
+    } else if(jsonAttribute.is_object()){
+        TreeNodeAttribute::TreeNodeAttributeObject attributeObject;
+        attributeObject.reserve(jsonAttribute.size());
+        for (auto& [attributeName, attributeValue] : jsonAttribute.items()) {
+            auto attribute = evalAttribute(attributeValue);
+            if(!attribute){
+                Logger::getInstance().error("Invalid attribute with key <"+attributeName+">");
+                return std::nullopt;
+            }
+            std::pair<std::string,TreeNodeAttribute> thisPair (attributeName, *attribute.value());
+            attributeObject.insert(thisPair);
+        }
+        std::shared_ptr<TreeNodeAttribute> thisAttribute = std::make_shared<TreeNodeAttribute>(attributeObject);
+        return thisAttribute;
+    }
+    Logger::getInstance().error("Invalid attribute type");
+    return std::nullopt;
 }
 
 std::string SchemaCatalog::to_string(const SchemaElement::SchemaElementArray& elements) {

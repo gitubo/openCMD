@@ -74,7 +74,7 @@ namespace opencmd {
             }
         }
 
-        NodeArray& operator=(const NodeArray& other) {
+/*         NodeArray& operator=(const NodeArray& other) {
             if (this != &other) {
                 TreeNode::operator=(other); 
                 this->is_array_size_fixed = other.is_array_size_fixed;
@@ -90,9 +90,9 @@ namespace opencmd {
                 }
             }
             return *this;
-        }
+        } */
 
-        virtual std::shared_ptr<TreeNode> clone() const override { 
+        virtual std::unique_ptr<TreeNode> clone() const override { 
             return std::make_unique<NodeArray>(*this);
         }
 

@@ -9,7 +9,17 @@ namespace opencmd {
 class TreeNodeAttribute {
 
     public:
-        using TreeNodeAttributeVariant = std::variant<std::nullptr_t, bool, double, int64_t, std::string>;
+        using TreeNodeAttributeObject = std::unordered_map<std::string, TreeNodeAttribute>;
+        using TreeNodeAttributeArray = std::vector<TreeNodeAttribute>;
+        using TreeNodeAttributeVariant = std::variant<
+            std::nullptr_t, 
+            bool, 
+            double, 
+            int64_t, 
+            std::string, 
+            TreeNodeAttributeObject, 
+            TreeNodeAttributeArray
+        >;
 
     private:
         TreeNodeAttributeVariant value;
@@ -20,9 +30,9 @@ class TreeNodeAttribute {
         TreeNodeAttribute(double d) : value(d) {}
         TreeNodeAttribute(int64_t i) : value(i) {}
         TreeNodeAttribute(const std::string& s) : value(s) {}
-        TreeNodeAttribute(const TreeNodeAttribute& other) { 
-            value = other.value;
-        }
+        TreeNodeAttribute(const TreeNodeAttributeObject& o) : value(o) {}
+        TreeNodeAttribute(const TreeNodeAttributeArray& a) : value(a) {}
+        TreeNodeAttribute(const TreeNodeAttribute& other) { value = other.value; }
 
         TreeNodeAttribute& operator=(const TreeNodeAttribute& other) {
             if (this != &other) {
@@ -40,6 +50,9 @@ class TreeNodeAttribute {
         bool isDecimal() const { return std::holds_alternative<double>(value); }
         bool isInteger() const { return std::holds_alternative<int64_t>(value); }
         bool isString() const { return std::holds_alternative<std::string>(value); }
+        bool isObject() const { return std::holds_alternative<TreeNodeAttributeObject>(value); }
+        bool isArray() const { return std::holds_alternative<TreeNodeAttributeArray>(value); }
+
         TreeNodeAttributeVariant get() const { return value; }
 
         std::optional<std::nullptr_t> getNull() const {
@@ -72,6 +85,15 @@ class TreeNodeAttribute {
             }
             return std::nullopt;
         }
+        std::optional<TreeNodeAttributeObject> getObject() const {
+            if (isObject()) return std::get<TreeNodeAttributeObject>(value);
+            return std::nullopt;
+        }
+        std::optional<TreeNodeAttributeArray> getArray() const {
+            if (isArray()) return std::get<TreeNodeAttributeArray>(value);
+            return std::nullopt;
+        }
+
         std::string to_string(size_t indent = 0) const {
             std::ostringstream oss;
             std::string indentStr(indent, ' '); 
@@ -86,6 +108,18 @@ class TreeNodeAttribute {
                 oss << std::get<int64_t>(value);
             } else if (isString()) {
                 oss << "\"" << std::get<std::string>(value) << "\"";
+            } else if (isObject()) {
+                oss << "{\n";
+                for (const auto& [key, val] : std::get<TreeNodeAttributeObject>(value)) {
+                    oss << indentStr << "  \"" << key << "\": " << val.to_string(indent + 2) << ",\n";
+                }
+                oss << indentStr << "}";
+            } else if (isArray()) {
+                oss << "[\n";
+                for (const auto& item : std::get<TreeNodeAttributeArray>(value)) {
+                    oss << indentStr << "  " << item.to_string(indent + 2) << ",\n";
+                }
+                oss << indentStr << "]";
             } else {
                 oss << "-attribute type not supported-";
             }

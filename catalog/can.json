@@ -52,7 +52,6 @@
             "type": "array",
             "structure": [
                 {
-                    "name": "",
                     "type": "unsigned integer",
                     "attributes":{
                         "bit_length": 8

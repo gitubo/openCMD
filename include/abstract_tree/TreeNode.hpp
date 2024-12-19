@@ -54,7 +54,7 @@ namespace opencmd {
             return *this;
         }
 
-        virtual std::shared_ptr<TreeNode> clone() const = 0;
+        virtual std::unique_ptr<TreeNode> clone() const = 0;
 
         virtual ~TreeNode() = default;
         

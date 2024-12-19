@@ -27,7 +27,7 @@ namespace opencmd {
             bitLength(other.bitLength), 
             endianness(other.endianness) {}
 
-        virtual std::shared_ptr<TreeNode> clone() const override { 
+        virtual std::unique_ptr<TreeNode> clone() const override { 
             return std::make_unique<NodeUnsignedInteger>(*this); 
         }
 
